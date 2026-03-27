@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}My Bookings — ParkSmart India{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:36px;padding-bottom:60px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1 class="section-title">My Bookings</h1>
+      <p style="font-size:14px;color:var(--muted);margin-top:4px;">All your parking reservations</p>
+    </div>
+    <a href="{{ url_for('lots_list') }}" class="btn-primary">🚗 Book Again</a>
+  </div>
+
+  {% if reservations %}
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    {% for r in reservations %}
+    <div class="ps-card" style="padding:0;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px 20px;">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <!-- Status icon -->
+          <div style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+            background:{{ 'rgba(16,185,129,.1)' if r.status.value=='completed' else 'rgba(99,102,241,.1)' if r.status.value=='active' else 'rgba(245,158,11,.1)' if r.status.value=='pending' else 'rgba(239,68,68,.1)' }};">
+            {{ '✅' if r.status.value=='completed' else '🔵' if r.status.value=='active' else '⏳' if r.status.value=='pending' else '❌' }}
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;color:var(--accent);">PS-{{ r.id[:8]|upper }}</span>
+              <span class="badge {{ 'badge-green' if r.status.value=='completed' else 'badge-blue' if r.status.value=='active' else 'badge-yellow' if r.status.value=='pending' else 'badge-red' }}">
+                {{ r.status.value|upper }}
+              </span>
+            </div>
+            <div style="font-size:13px;color:var(--txt);font-weight:600;margin-top:2px;">{{ r.slot.lot.name }} — Slot {{ r.slot.slot_number }}</div>
+            <div style="font-size:12px;color:var(--muted);">
+              🚘 {{ r.vehicle_number }} &nbsp;·&nbsp; {{ r.vehicle_type.value }}
+              &nbsp;·&nbsp; {{ r.booked_at.strftime('%d %b %Y, %I:%M %p') }}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          {% if r.status.value == 'completed' %}
+          <div style="text-align:right;">
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:{{ '#10b981' if r.is_grace else 'var(--txt)' }};">
+              {{ '₹0 🎁' if r.is_grace else '₹' + (r.amount_charged|round(0,'floor')|int|string) }}
+            </div>
+            <div style="font-size:10px;color:var(--muted);">{{ r.duration_mins }} min</div>
+          </div>
+          {% endif %}
+          <a href="{{ url_for('view_pass', res_id=r.id) }}" class="btn-success" style="padding:8px 14px;font-size:13px;">View Pass</a>
+          {% if r.status.value in ['pending', 'active'] %}
+          <form method="POST" action="{{ url_for('cancel_booking', res_id=r.id) }}" style="display:inline;" onsubmit="return confirm('Cancel this booking?')">
+            <button type="submit" class="btn-danger" style="padding:8px 14px;font-size:13px;">Cancel</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ps-card" style="padding:64px;text-align:center;">
+    <div style="font-size:56px;margin-bottom:16px;">📋</div>
+    <div style="font-size:16px;font-weight:600;color:var(--txt);margin-bottom:8px;">No bookings yet</div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Start by finding a parking lot near you.</p>
+    <a href="{{ url_for('lots_list') }}" class="btn-primary" style="font-size:15px;padding:12px 28px;">Find Parking →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Sign In — ParkSmart India{% endblock %}
+{% block content %}
+<div style="min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:40px 16px;" class="mesh">
+  <div class="ps-card animate-slide-up" style="width:100%;max-width:420px;padding:36px;">
+
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:40px;margin-bottom:12px;">🔐</div>
+      <h1 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.6rem;color:var(--txt);">Welcome back</h1>
+      <p style="font-size:14px;color:var(--muted);margin-top:4px;">Sign in to your ParkSmart account</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="ps-form-group">
+        <label class="ps-label">Email address</label>
+        <input name="email" type="email" class="ps-input" placeholder="you@example.com" required autocomplete="email"/>
+      </div>
+      <div class="ps-form-group">
+        <label class="ps-label">Password</label>
+        <input name="password" type="password" class="ps-input" placeholder="Your password" required autocomplete="current-password"/>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:13px;">
+        Sign In →
+      </button>
+    </form>
+
+    <div style="height:1px;background:var(--border);margin:20px 0;"></div>
+
+    <p style="text-align:center;font-size:13px;color:var(--muted);">
+      No account? <a href="{{ url_for('register') }}" style="color:var(--accent);font-weight:600;">Register here</a>
+    </p>
+
+    <!-- Quick demo logins -->
+    <div style="margin-top:20px;padding:16px;background:var(--card2);border-radius:12px;border:1px solid var(--border);">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">Quick Demo Login</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        {% for label,email,pw in [('👑 Admin','admin@parksmart.in','Admin@123'),('🏢 Vendor','vendor@parksmart.in','Vendor@123'),('🚗 Customer','customer@parksmart.in','Customer@123')] %}
+        <button onclick="fillLogin('{{email}}','{{pw}}')" style="padding:6px 12px;border-radius:8px;background:var(--glow);border:1px solid rgba(16,185,129,.2);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
+          {{label}}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function fillLogin(email, pw) {
+  document.querySelector('input[name="email"]').value = email;
+  document.querySelector('input[name="password"]').value = pw;
+}
+</script>
+{% endblock %}

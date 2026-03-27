@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — ParkSmart India{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:36px;padding-bottom:60px;">
+  <div style="margin-bottom:28px;">
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;background:rgba(99,102,241,.12);margin-bottom:8px;">
+      <span style="font-size:11px;font-weight:700;color:#6366f1;font-family:'JetBrains Mono',monospace;">⚡ SUPER ADMIN</span>
+    </div>
+    <h1 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.8rem;color:var(--txt);">Platform Overview</h1>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;">
+    <div class="stat-card"><div class="stat-icon" style="background:#6366f11a;font-size:18px;">👥</div><div class="stat-num">{{ users|length }}</div><div class="stat-label">Total Users</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#10b9811a;font-size:18px;">🏢</div><div class="stat-num">{{ lots|selectattr('status.value','eq','active')|list|length }}</div><div class="stat-label">Active Lots</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#f59e0b1a;font-size:18px;">💰</div><div class="stat-num">₹{{ total_rev|round(0,'floor')|int }}</div><div class="stat-label">Revenue</div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#0ea5e91a;font-size:18px;">🎫</div><div class="stat-num">{{ today_bookings }}</div><div class="stat-label">Today Bookings</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="ps-card" style="overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);">⏳ Pending Approvals</div>
+        <span class="badge badge-yellow">{{ pending|length }}</span>
+      </div>
+      {% if pending %}
+      {% for lot in pending %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;font-size:14px;color:var(--txt);">{{ lot.name }}</div>
+          <div style="font-size:12px;color:var(--muted);">{{ lot.owner.full_name }} · {{ lot.city }}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <form method="POST" action="{{ url_for('approve_lot', lot_id=lot.id) }}" style="display:inline;">
+            <button type="submit" class="btn-success" style="padding:6px 12px;font-size:12px;">✓ Approve</button>
+          </form>
+          <form method="POST" action="{{ url_for('reject_lot', lot_id=lot.id) }}" style="display:inline;">
+            <button type="submit" class="btn-danger" style="padding:6px 12px;font-size:12px;">✗ Reject</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="padding:32px;text-align:center;color:var(--muted);font-size:14px;">✅ No pending approvals</div>
+      {% endif %}
+    </div>
+    <div class="ps-card" style="overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);"><div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);">🏢 All Lots</div></div>
+      <div style="overflow-x:auto;"><table class="ps-table"><thead><tr><th>Name</th><th>Owner</th><th>Status</th><th>Slots</th></tr></thead><tbody>
+        {% for lot in lots %}<tr>
+          <td style="font-weight:600;font-size:13px;">{{ lot.name[:22] }}</td>
+          <td style="font-size:12px;color:var(--muted);">{{ lot.owner.full_name.split()[0] }}</td>
+          <td><span class="badge {{ 'badge-green' if lot.status.value=='active' else 'badge-yellow' if lot.status.value=='pending' else 'badge-red' }}">{{ lot.status.value }}</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">{{ lot.slots|length }}</td>
+        </tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+    <div class="ps-card" style="overflow:hidden;grid-column:span 2;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);"><div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);">👥 All Users</div></div>
+      <div style="overflow-x:auto;"><table class="ps-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr></thead><tbody>
+        {% for u in users %}{% if u.role.value != 'super_admin' %}<tr>
+          <td style="font-weight:600;font-size:13px;">{{ u.full_name }}</td>
+          <td style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{ u.email }}</td>
+          <td><span class="badge {{ 'badge-green' if u.role.value=='vendor' else 'badge-blue' }}">{{ u.role.value }}</span></td>
+          <td><span class="badge {{ 'badge-green' if u.is_active else 'badge-red' }}">{{ 'Active' if u.is_active else 'Suspended' }}</span></td>
+          <td><form method="POST" action="{{ url_for('toggle_user', user_id=u.id) }}" style="display:inline;">
+            <button type="submit" class="{{ 'btn-danger' if u.is_active else 'btn-success' }}" style="padding:5px 10px;font-size:11px;">{{ 'Suspend' if u.is_active else 'Activate' }}</button>
+          </form></td>
+        </tr>{% endif %}{% endfor %}
+      </tbody></table></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

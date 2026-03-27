@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Find Parking — ParkSmart India{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  #map { height: 340px; border-radius: 1.25rem; border: 1px solid var(--border); }
+  .dark #map { filter: invert(90%) hue-rotate(180deg) saturate(.7); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:36px;padding-bottom:60px;">
+  <h1 class="section-title" style="margin-bottom:8px;">Find Parking Near You</h1>
+  <p style="font-size:14px;color:var(--muted);margin-bottom:24px;">Click on a lot on the map or from the list below to book a slot.</p>
+
+  <!-- Map -->
+  <div class="ps-card" style="padding:20px;margin-bottom:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);">🗺️ Map View</div>
+      <button onclick="locateMe()" class="btn-primary" style="padding:8px 14px;font-size:12px;">📍 My Location</button>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <!-- Lots list -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;">
+    {% for lot in lots %}
+    <div class="ps-card" style="padding:20px;">
+      <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:12px;">
+        <div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);">{{ lot.name }}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">📍 {{ lot.address }}, {{ lot.city }}</div>
+        </div>
+        <span class="badge badge-green" style="flex-shrink:0;">Active</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div style="padding:10px;border-radius:10px;background:var(--glow);text-align:center;">
+          <div style="font-size:18px;">🛵</div>
+          <div style="font-weight:700;font-size:13px;color:var(--txt);">₹{{ lot.rate_2w }}/hr</div>
+          <div style="font-size:10px;color:var(--muted);">{{ lot.available_2w }} free</div>
+        </div>
+        <div style="padding:10px;border-radius:10px;background:var(--glow);text-align:center;">
+          <div style="font-size:18px;">🚗</div>
+          <div style="font-weight:700;font-size:13px;color:var(--txt);">₹{{ lot.rate_4w }}/hr</div>
+          <div style="font-size:10px;color:var(--muted);">{{ lot.available_4w }} free</div>
+        </div>
+      </div>
+      {% if lot.total_available > 0 %}
+      <a href="{{ url_for('book_slot', lot_id=lot.id) }}" class="btn-primary" style="width:100%;justify-content:center;font-size:13px;">⚡ Book Slot Here</a>
+      {% else %}
+      <div style="text-align:center;padding:10px;border-radius:10px;background:rgba(239,68,68,.08);color:#ef4444;font-size:13px;font-weight:600;">🔴 Lot Full</div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="ps-card" style="padding:48px;text-align:center;grid-column:1/-1;color:var(--muted);">
+      <div style="font-size:48px;margin-bottom:12px;">🏗️</div>
+      <div style="font-size:15px;font-weight:600;color:var(--txt);margin-bottom:6px;">No active lots yet</div>
+      <p style="font-size:13px;">Parking lots are being added. Check back soon!</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const lots = {{ lots|map(attribute='to_dict')|list|tojson }};
+const map  = L.map('map').setView([26.8467, 80.9462], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { attribution:'© OpenStreetMap' }).addTo(map);
+
+const greenIcon = L.divIcon({
+  className:'',
+  html:`<div style="width:28px;height:28px;background:var(--accent);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>`,
+  iconSize:[28,28], iconAnchor:[14,28]
+});
+
+lots.forEach(lot => {
+  L.marker([lot.lat, lot.lng], { icon: greenIcon }).addTo(map)
+    .bindPopup(`<div style="font-family:'DM Sans',sans-serif;min-width:180px;padding:4px">
+      <strong style="font-size:14px">${lot.name}</strong>
+      <div style="color:#10b981;font-size:12px;margin-top:4px">🛵 ₹${lot.rate_2w}/hr · 🚗 ₹${lot.rate_4w}/hr</div>
+      <div style="font-size:12px;margin-top:2px;color:#666">${lot.avail_2w+lot.avail_4w} slots available</div>
+      <a href="/lots/${lot.id}/book" style="display:block;margin-top:8px;padding:7px;background:#10b981;color:white;border-radius:8px;text-align:center;font-weight:600;font-size:13px;text-decoration:none">Book Now</a>
+    </div>`, { maxWidth:220 });
+});
+
+function locateMe() {
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+    L.circleMarker([pos.coords.latitude, pos.coords.longitude], {
+      radius:10, fillColor:'#6366f1', color:'white', weight:3, fillOpacity:.9
+    }).addTo(map).bindPopup('You are here 📍').openPopup();
+  });
+}
+</script>
+{% endblock %}

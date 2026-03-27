@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}QR Scan — PS-{{ res.id[:8]|upper }}{% endblock %}
+{% block content %}
+<div style="min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:40px 16px;" class="mesh">
+  <div class="ps-card animate-slide-up" style="width:100%;max-width:440px;padding:32px;text-align:center;">
+
+    <div style="font-size:48px;margin-bottom:12px;">
+      {{ '✅' if res.status.value in ['active','completed'] else '⚠️' if res.status.value=='cancelled' else '🎫' }}
+    </div>
+    <h1 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.4rem;color:var(--txt);margin-bottom:4px;">QR Pass Scanned</h1>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:24px;">{{ lot.name }}</p>
+
+    <!-- Details -->
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:left;margin-bottom:20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        {% for label, val in [('Pass ID','PS-'+res.id[:8]|upper),('Customer',res.customer.full_name),('Vehicle',res.vehicle_number),('Type',res.vehicle_type.value),('Slot',res.slot.slot_number),('Status',res.status.value|upper)] %}
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">{{label}}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--txt);font-family:'JetBrains Mono',monospace;">{{val}}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Action buttons for vendor -->
+    {% if current_user.role.value == 'vendor' %}
+    {% if res.status.value == 'pending' %}
+    <button onclick="doCheckin('{{ res.id }}')" class="btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:14px;margin-bottom:8px;">
+      🚗 Check In Vehicle
+    </button>
+    {% elif res.status.value == 'active' %}
+    <button onclick="doCheckout('{{ res.id }}')" class="btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:14px;background:#059669;margin-bottom:8px;">
+      ✅ Checkout & Generate Bill
+    </button>
+    {% endif %}
+    {% endif %}
+
+    <a href="{{ url_for('view_pass', res_id=res.id) }}" class="btn-secondary" style="width:100%;justify-content:center;">View Full Pass</a>
+    <div id="scanResult" style="margin-top:14px;padding:12px;border-radius:10px;display:none;font-size:14px;font-weight:600;text-align:center;"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function doCheckin(resId) {
+  const res = await fetch(`/vendor/checkin/${resId}`, { method: 'POST' });
+  const data = await res.json();
+  if(data.ok) {
+    const el = document.getElementById('scanResult');
+    el.style.display = 'block';
+    el.style.background = 'rgba(16,185,129,.1)';
+    el.style.color = '#10b981';
+    el.textContent = `✅ Checked in at ${data.entry_time}`;
+    setTimeout(() => location.reload(), 1500);
+  }
+}
+async function doCheckout(resId) {
+  const res = await fetch(`/vendor/checkout/${resId}`, { method: 'POST' });
+  const data = await res.json();
+  if(data.ok) {
+    const msg = data.is_grace
+      ? `🎁 Grace period! Total: ₹0 (${data.duration_mins} min)`
+      : `💰 Total: ₹${data.total} (${data.duration_mins} min)`;
+    const el = document.getElementById('scanResult');
+    el.style.display = 'block';
+    el.style.background = 'rgba(16,185,129,.1)';
+    el.style.color = '#10b981';
+    el.textContent = '✅ ' + msg;
+    setTimeout(() => location.reload(), 2000);
+  }
+}
+</script>
+{% endblock %}
