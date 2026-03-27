@@ -23,15 +23,32 @@ load_dotenv()
 from models import (db, User, ParkingLot, ParkingSlot, Reservation,
                     UserRole, SlotType, SlotStatus, ReservationStatus, LotStatus)
 
+# ── DB URL helper ────────────────────────────────────────────────
+def _fix_db_url(url: str) -> str:
+    """
+    Normalise Supabase / Heroku / Render database URLs.
+    - 'postgres://'      → 'postgresql://'          (SQLAlchemy 2.x)
+    - 'postgresql://'   → 'postgresql+psycopg://'   (psycopg3 driver)
+    SQLite URLs are returned unchanged.
+    """
+    if url.startswith("sqlite"):
+        return url
+    url = url.replace("postgres://", "postgresql://")
+    # Switch to psycopg3 dialect if not already set
+    if url.startswith("postgresql://") and "+psycopg" not in url:
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url
+
+
 # ── App factory ──────────────────────────────────────────────────
 def create_app():
     app = Flask(__name__)
     app.config.update(
         SECRET_KEY            = os.getenv("SECRET_KEY", "dev-change-me-please"),
-        SQLALCHEMY_DATABASE_URI = os.getenv(
+        SQLALCHEMY_DATABASE_URI = _fix_db_url(os.getenv(
             "DATABASE_URL",
             "sqlite:///parksmart.db"           # SQLite for local dev — no setup needed
-        ).replace("postgres://", "postgresql://"),
+        )),
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
         SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True},
     )
