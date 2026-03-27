@@ -25,32 +25,41 @@ from models import (db, User, ParkingLot, ParkingSlot, Reservation,
 
 # ── DB URL helper ────────────────────────────────────────────────
 def _fix_db_url(url: str) -> str:
-    """
-    Normalise Supabase / Heroku / Render database URLs.
-    - 'postgres://'      → 'postgresql://'          (SQLAlchemy 2.x)
-    - 'postgresql://'   → 'postgresql+psycopg://'   (psycopg3 driver)
-    SQLite URLs are returned unchanged.
-    """
+    if not url:
+        return "sqlite:///parksmart.db"
+
     if url.startswith("sqlite"):
         return url
+
     url = url.replace("postgres://", "postgresql://")
-    # Switch to psycopg3 dialect if not already set
+
     if url.startswith("postgresql://") and "+psycopg" not in url:
         url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+
     return url
+   
+    
+   
+   
 
 
 # ── App factory ──────────────────────────────────────────────────
 def create_app():
     app = Flask(__name__)
+
+    db_url = os.getenv("DATABASE_URL")
+    print("🔍 RAW DATABASE_URL:", db_url)
+    print("🔍 FIXED DATABASE_URL:", _fix_db_url(db_url))
     app.config.update(
         SECRET_KEY            = os.getenv("SECRET_KEY", "dev-change-me-please"),
-        SQLALCHEMY_DATABASE_URI = _fix_db_url(os.getenv(
-            "DATABASE_URL",
+        SQLALCHEMY_DATABASE_URI = _fix_db_url(os.getenv("DATABASE_URL",
             "sqlite:///parksmart.db"           # SQLite for local dev — no setup needed
         )),
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
-        SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True},
+       SQLALCHEMY_ENGINE_OPTIONS = {
+    "pool_pre_ping": True,
+    "connect_args": {"connect_timeout": 10}
+},
     )
 
     db.init_app(app)
@@ -74,8 +83,12 @@ def create_app():
 
     # ── DB init ──────────────────────────────────────────────────
     with app.app_context():
-        db.create_all()
-        _seed(app, bcrypt)
+        try:
+            db.create_all()
+            _seed(app, bcrypt)
+            print("✅ Database connected successfully")
+        except Exception as e:
+            print("❌ Database connection failed:", str(e))
 
     return app
 
