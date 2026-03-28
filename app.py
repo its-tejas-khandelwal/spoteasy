@@ -60,6 +60,14 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
 app.config['SQLALCHEMY_DATABASE_URI'] = get_db_url()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Firebase config (set these in Render environment)
+app.config['FIREBASE_API_KEY']        = os.environ.get('FIREBASE_API_KEY', '')
+app.config['FIREBASE_AUTH_DOMAIN']    = os.environ.get('FIREBASE_AUTH_DOMAIN', '')
+app.config['FIREBASE_PROJECT_ID']     = os.environ.get('FIREBASE_PROJECT_ID', '')
+app.config['FIREBASE_STORAGE_BUCKET'] = os.environ.get('FIREBASE_STORAGE_BUCKET', '')
+app.config['FIREBASE_SENDER_ID']      = os.environ.get('FIREBASE_SENDER_ID', '')
+app.config['FIREBASE_APP_ID']         = os.environ.get('FIREBASE_APP_ID', '')
+app.config['FIREBASE_VAPID_KEY']      = os.environ.get('FIREBASE_VAPID_KEY', '')
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle': 280, 'pool_pre_ping': True}
 
 db.init_app(app)
@@ -414,6 +422,14 @@ def book_slot(lid):
         db.session.add(res)
         db.session.commit()
         flash('Booking confirmed! 🎉', 'success')
+        # Send push notification
+        if current_user.fcm_token:
+            send_push_notification(
+                current_user.fcm_token,
+                '🅿️ Booking Confirmed! — SpotEasy',
+                f'Slot {slot.label} at {lot.name}. Show QR at gate.',
+                {'url': f'/reservation/{res.id}/pass', 'booking_id': str(res.id)}
+            )
         return redirect(url_for('digital_pass', rid=res.id))
     return render_template('book_slot.html', lot=lot, slots=available_slots)
 
@@ -438,14 +454,18 @@ def checkout(rid):
     if current_user.role == 'customer' and res.customer_id != current_user.id:
         flash('Not authorised.', 'danger')
         return redirect(url_for('index'))
+    payment_method  = request.form.get('payment_method', 'cash')
     exit_time       = now_ist()
     res.exit_time   = exit_time
     res.status      = 'completed'
-    res.amount_paid = calculate_bill(res.entry_time, exit_time, res.vehicle_type,
+    raw_amount      = calculate_bill(res.entry_time, exit_time, res.vehicle_type,
                                      res.slot.lot.rate_2w, res.slot.lot.rate_4w)
+    # Round off to nearest rupee
+    res.amount_paid = Decimal(str(round(float(raw_amount))))
+    res.payment_method = payment_method
     res.slot.status = 'available'
     db.session.commit()
-    flash(f'Checkout done! Amount: ₹{res.amount_paid}', 'success')
+    flash(f'Checkout done! Amount: ₹{res.amount_paid} ({payment_method})', 'success')
     return redirect(url_for('digital_pass', rid=rid))
 
 # ── Health ─────────────────────────────────────────────────────────────────────
@@ -502,3 +522,186 @@ def export_csv(table):
     response.headers['Content-Type'] = 'text/csv'
     response.headers['Content-Disposition'] = f'attachment; filename=parksmart_{table}.csv'
     return response
+
+# ── Account / Profile ──────────────────────────────────────────────────────────
+@app.route('/account', methods=['GET', 'POST'])
+@login_required
+def account():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'update_profile':
+            name  = request.form.get('name', '').strip()
+            phone = request.form.get('phone', '').strip()
+            if name and len(name) >= 3:
+                current_user.name  = name
+                current_user.phone = phone
+                db.session.commit()
+                flash('Profile updated successfully!', 'success')
+            else:
+                flash('Name must be at least 3 characters.', 'danger')
+        elif action == 'change_password':
+            old_pw  = request.form.get('old_password', '')
+            new_pw  = request.form.get('new_password', '')
+            conf_pw = request.form.get('confirm_password', '')
+            if not current_user.check_password(old_pw):
+                flash('Current password is incorrect.', 'danger')
+            elif len(new_pw) < 8:
+                flash('New password must be at least 8 characters.', 'danger')
+            elif new_pw != conf_pw:
+                flash('Passwords do not match.', 'danger')
+            else:
+                current_user.set_password(new_pw)
+                db.session.commit()
+                flash('Password changed successfully!', 'success')
+        return redirect(url_for('account'))
+
+    # Stats for the account page
+    if current_user.role == 'customer':
+        reservations = Reservation.query.filter_by(customer_id=current_user.id).order_by(Reservation.created_at.desc()).all()
+        total_spent  = sum(float(r.amount_paid or 0) for r in reservations if r.status == 'completed')
+        stats = {
+            'total_bookings': len(reservations),
+            'active':   sum(1 for r in reservations if r.status == 'active'),
+            'completed': sum(1 for r in reservations if r.status == 'completed'),
+            'total_spent': round(total_spent, 2),
+            'recent': reservations[:5],
+        }
+    elif current_user.role == 'vendor':
+        lots  = ParkingLot.query.filter_by(owner_id=current_user.id).all()
+        total = sum(lot.total_slots for lot in lots)
+        stats = {
+            'total_lots': len(lots),
+            'total_slots': total,
+            'active_lots': sum(1 for l in lots if l.is_active),
+        }
+    else:
+        stats = {}
+    return render_template('account.html', stats=stats)
+
+# ── Push Notifications (Firebase FCM) ─────────────────────────────────────────
+import requests as _requests
+
+def send_push_notification(fcm_token, title, body, data=None):
+    """Send a push notification via Firebase FCM HTTP API."""
+    server_key = os.environ.get('FIREBASE_SERVER_KEY', '')
+    if not server_key or not fcm_token:
+        print("[FCM] No server key or token — skipping push")
+        return False
+    try:
+        payload = {
+            "to": fcm_token,
+            "notification": {"title": title, "body": body, "icon": "/static/icon.png"},
+            "data": data or {}
+        }
+        r = _requests.post(
+            "https://fcm.googleapis.com/fcm/send",
+            json=payload,
+            headers={
+                "Authorization": f"key={server_key}",
+                "Content-Type": "application/json"
+            },
+            timeout=5
+        )
+        print(f"[FCM] Sent → {r.status_code}: {r.text[:80]}")
+        return r.status_code == 200
+    except Exception as e:
+        print(f"[FCM] Error: {e}")
+        return False
+
+@app.route('/save_fcm_token', methods=['POST'])
+@login_required
+def save_fcm_token():
+    """Save FCM token for the logged-in user."""
+    try:
+        token = request.json.get('token', '').strip()
+        if token:
+            current_user.fcm_token = token
+            db.session.commit()
+            return jsonify({'status': 'saved'})
+        return jsonify({'status': 'no token'}), 400
+    except Exception as e:
+        return jsonify({'status': 'error', 'msg': str(e)}), 500
+
+@app.route('/admin/notify', methods=['GET', 'POST'])
+@login_required
+def admin_notify():
+    """Admin can send push notification to all users or specific user."""
+    if current_user.role != 'admin':
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        title   = request.form.get('title', '').strip()
+        body    = request.form.get('body', '').strip()
+        user_id = request.form.get('user_id', 'all')
+        sent, failed = 0, 0
+        if user_id == 'all':
+            users = User.query.filter(User.fcm_token.isnot(None)).all()
+        else:
+            users = User.query.filter_by(id=int(user_id)).all()
+        for u in users:
+            if u.fcm_token:
+                ok = send_push_notification(u.fcm_token, title, body)
+                if ok: sent += 1
+                else:  failed += 1
+        flash(f'Notification sent to {sent} users. {failed} failed.', 'success')
+        return redirect(url_for('admin_notify'))
+    users = User.query.filter(User.fcm_token.isnot(None)).all()
+    all_users = User.query.all()
+    return render_template('admin_notify.html', users=users, all_users=all_users)
+
+@app.route('/api/customer/stats')
+@login_required
+def api_customer_stats():
+    if current_user.role != 'customer':
+        return jsonify({}), 403
+    reservations = Reservation.query.filter_by(customer_id=current_user.id).all()
+    total_spent = sum(float(r.amount_paid or 0) for r in reservations if r.status == 'completed')
+    return jsonify({
+        'total_bookings': len(reservations),
+        'active': sum(1 for r in reservations if r.status == 'active'),
+        'completed': sum(1 for r in reservations if r.status == 'completed'),
+        'total_spent': int(round(total_spent)),
+    })
+
+# ── FCM V1 API (replaces legacy Server Key) ────────────────────────────────────
+def send_push_v1(fcm_token, title, body, data=None):
+    """Send push using FCM HTTP V1 API with service account."""
+    try:
+        import google.oauth2.service_account as sa
+        import google.auth.transport.requests as ga_requests
+        import json as _json
+
+        sa_path = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON', '')
+        project_id = os.environ.get('FIREBASE_PROJECT_ID', '')
+        if not sa_path or not project_id:
+            return send_push_notification(fcm_token, title, body, data)  # fallback
+
+        creds_info = _json.loads(sa_path)
+        creds = sa.Credentials.from_service_account_info(
+            creds_info,
+            scopes=['https://www.googleapis.com/auth/firebase.messaging']
+        )
+        creds.refresh(ga_requests.Request())
+
+        url = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
+        payload = {
+            "message": {
+                "token": fcm_token,
+                "notification": {"title": title, "body": body},
+                "data": {k: str(v) for k, v in (data or {}).items()},
+                "webpush": {
+                    "notification": {
+                        "icon": "/static/icon-192.png",
+                        "badge": "/static/badge.png",
+                        "requireInteraction": True,
+                    }
+                }
+            }
+        }
+        r = _requests.post(url, json=payload,
+                           headers={"Authorization": f"Bearer {creds.token}"},
+                           timeout=5)
+        print(f"[FCM V1] {r.status_code}: {r.text[:80]}")
+        return r.status_code == 200
+    except Exception as e:
+        print(f"[FCM V1] Error: {e}")
+        return False

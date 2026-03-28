@@ -1,210 +1,326 @@
 {% extends "base.html" %}
-{% block title %}Parking Pass — SpotEasy{% endblock %}
+{% block title %}Parking Pass #SE{{ '%05d'|format(res.id) }} — SpotEasy{% endblock %}
 
 {% block content %}
-<div class="max-w-md mx-auto">
-
+<div class="max-w-lg mx-auto">
   <div class="flex items-center gap-3 mb-5 no-print">
     <a href="{{ url_for('customer_dashboard') }}"
-       class="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+       class="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> My Bookings
     </a>
     <span class="text-gray-300 dark:text-gray-700">|</span>
-    <span class="text-xs text-gray-400">Booking #{{ res.id }}</span>
+    <span class="text-xs font-mono text-gray-400">Booking #SE{{ '%05d'|format(res.id) }}</span>
   </div>
 
-  <!-- ═══ PASS CARD (this is what prints) ═══ -->
-  <div id="passCard" class="relative overflow-hidden rounded-3xl text-white"
-       style="background:linear-gradient(135deg,#059669 0%,#0d9488 50%,#0891b2 100%);box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+  <!-- ══════════════════════════════════════════════ -->
+  <!--              PRINTABLE PASS SLIP              -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="passCard" class="bg-white rounded-3xl overflow-hidden shadow-2xl"
+       style="font-family:'Inter',sans-serif;">
 
-    <!-- Top shine effect -->
-    <div style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:rgba(255,255,255,0.07);border-radius:50%;"></div>
-
-    <!-- Header -->
-    <div class="px-6 pt-6 pb-4">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-          <div class="bg-white/20 rounded-xl p-1.5">
-            <i data-lucide="parking-circle" class="w-6 h-6"></i>
+    <!-- Header Band -->
+    <div style="background:linear-gradient(135deg,#16a34a 0%,#059669 40%,#0891b2 100%);padding:24px 28px 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="background:rgba(255,255,255,0.2);border-radius:12px;padding:8px;display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:20px;">🅿️</span>
           </div>
-          <span class="font-bold text-lg tracking-tight">SpotEasy</span>
+          <div>
+            <div style="color:white;font-size:20px;font-weight:900;letter-spacing:-0.5px;">SpotEasy</div>
+            <div style="color:rgba(255,255,255,0.7);font-size:11px;font-weight:600;">Parking Pass · India 🇮🇳</div>
+          </div>
         </div>
-        <span class="text-xs font-bold px-3 py-1.5 rounded-full
-          {% if res.status=='active' %}bg-emerald-400/30 border border-emerald-300/50
-          {% else %}bg-white/20 border border-white/30{% endif %}">
-          {% if res.status=='active' %}🟢 ACTIVE{% else %}✅ COMPLETED{% endif %}
-        </span>
-      </div>
-      <h2 class="text-xl font-extrabold leading-tight">{{ res.slot.lot.name }}</h2>
-      <p class="text-white/75 text-sm mt-1">{{ res.slot.lot.address }}, {{ res.slot.lot.city }}</p>
-    </div>
-
-    <!-- Perforation line -->
-    <div class="relative mx-0 my-1 flex items-center" style="height:24px;">
-      <div class="w-5 h-5 rounded-full bg-gray-50 dark:bg-slate-950 absolute -left-2.5"></div>
-      <div class="flex-1 border-t-2 border-dashed border-white/30 mx-4"></div>
-      <div class="w-5 h-5 rounded-full bg-gray-50 dark:bg-slate-950 absolute -right-2.5"></div>
-    </div>
-
-    <!-- Slot details grid -->
-    <div class="px-6 pb-4 grid grid-cols-3 gap-3 text-center">
-      <div class="bg-white/10 rounded-2xl py-3 px-2">
-        <div class="text-white/60 text-xs mb-1" id="lbl1">Slot</div>
-        <div class="font-bold text-xl">{{ res.slot.label }}</div>
-        <div class="text-white/60 text-xs">{{ '🛵 2W' if res.slot.slot_type=='2w' else '🚗 4W' }}</div>
-      </div>
-      <div class="bg-white/10 rounded-2xl py-3 px-2">
-        <div class="text-white/60 text-xs mb-1" id="lbl2">Vehicle</div>
-        <div class="font-bold text-base">{{ res.vehicle_no }}</div>
-        <div class="text-white/60 text-xs">{{ '2-Wheeler' if res.vehicle_type=='2w' else '4-Wheeler' }}</div>
-      </div>
-      <div class="bg-white/10 rounded-2xl py-3 px-2">
-        <div class="text-white/60 text-xs mb-1" id="lbl3">Rate</div>
-        {% if res.vehicle_type == '2w' %}
-        <div class="font-bold text-base">₹{{ res.slot.lot.rate_2w }}</div>
-        {% else %}
-        <div class="font-bold text-base">₹{{ res.slot.lot.rate_4w }}</div>
-        {% endif %}
-        <div class="text-white/60 text-xs">per hour</div>
-      </div>
-    </div>
-
-    <!-- Time & Amount -->
-    <div class="px-6 pb-4 grid grid-cols-2 gap-3">
-      <div class="bg-white/10 rounded-2xl p-4">
-        <div class="text-white/60 text-xs mb-1" id="lbl4">Entry Time</div>
-        <div class="font-semibold text-sm">{{ res.entry_time.strftime('%d %b %Y') }}</div>
-        <div class="font-bold text-lg">{{ res.entry_time.strftime('%I:%M %p') }}</div>
-        <div class="text-white/50 text-xs">IST</div>
-      </div>
-      <div class="bg-white/10 rounded-2xl p-4">
-        {% if res.exit_time and res.status == 'completed' %}
-        <div class="text-white/60 text-xs mb-1" id="lbl5">Amount Paid</div>
-        <div class="font-bold text-3xl">₹{{ res.amount_paid }}</div>
-        {% if res.amount_paid == 0 %}
-        <div class="text-emerald-300 text-xs font-semibold mt-1">Grace Period — FREE!</div>
-        {% else %}
-        <div class="text-white/50 text-xs mt-1">incl. all charges</div>
-        {% endif %}
-        {% else %}
-        <div class="text-white/60 text-xs mb-1">Grace Period</div>
-        <div class="font-bold text-lg">FREE</div>
-        <div class="text-white/60 text-xs mt-1">if exit ≤ 15 mins</div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- QR Code -->
-    <div class="flex flex-col items-center px-6 pb-6">
-      <div class="bg-white rounded-2xl p-3 shadow-lg mb-2">
-        {% if qr_b64 %}
-          <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR Code" class="w-40 h-40" style="image-rendering:pixelated;"/>
-        {% else %}
-          <!-- Fallback: styled QR placeholder with token -->
-          <div class="w-40 h-40 flex flex-col items-center justify-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-            <i data-lucide="qr-code" class="w-12 h-12 text-gray-400 mb-2"></i>
-            <p class="text-xs text-gray-500 text-center px-2 break-all font-mono">{{ res.qr_token[:16] }}...</p>
+        <div style="text-align:right;">
+          <div style="background:{% if res.status=='active' %}rgba(74,222,128,0.3){% else %}rgba(255,255,255,0.2){% endif %};border:1px solid rgba(255,255,255,0.4);border-radius:20px;padding:5px 12px;color:white;font-size:11px;font-weight:800;">
+            {% if res.status=='active' %}🟢 ACTIVE{% else %}✅ COMPLETED{% endif %}
           </div>
-        {% endif %}
+          <div style="color:rgba(255,255,255,0.6);font-size:10px;margin-top:4px;">#SE{{ '%05d'|format(res.id) }}</div>
+        </div>
       </div>
-      <p class="text-white/60 text-xs" id="lblQR">Scan at entry / exit gate</p>
-      <p class="text-white/40 text-xs mt-1 font-mono">{{ res.qr_token[:20] }}...</p>
+      <div style="color:white;font-size:18px;font-weight:800;line-height:1.2;">{{ res.slot.lot.name }}</div>
+      <div style="color:rgba(255,255,255,0.75);font-size:12px;margin-top:4px;">📍 {{ res.slot.lot.address }}, {{ res.slot.lot.city }}</div>
+    </div>
+
+    <!-- Perforation -->
+    <div style="display:flex;align-items:center;background:#f9fafb;height:20px;position:relative;">
+      <div style="width:14px;height:14px;background:white;border-radius:50%;position:absolute;left:-7px;border:2px solid #e5e7eb;"></div>
+      <div style="flex:1;border-top:2px dashed #d1d5db;margin:0 12px;"></div>
+      <div style="width:14px;height:14px;background:white;border-radius:50%;position:absolute;right:-7px;border:2px solid #e5e7eb;"></div>
+    </div>
+
+    <!-- Body -->
+    <div style="background:#f9fafb;padding:20px 28px;">
+
+      <!-- Main details grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div style="background:white;border-radius:16px;padding:12px;text-align:center;border:1px solid #e5e7eb;">
+          <div style="color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Slot</div>
+          <div style="font-size:20px;font-weight:900;color:#111827;">{{ res.slot.label }}</div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:2px;">{{ '🛵 2-Wheeler' if res.slot.slot_type=='2w' else '🚗 4-Wheeler' }}</div>
+        </div>
+        <div style="background:white;border-radius:16px;padding:12px;text-align:center;border:1px solid #e5e7eb;">
+          <div style="color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Vehicle</div>
+          <div style="font-size:14px;font-weight:900;color:#111827;font-family:monospace;letter-spacing:1px;">{{ res.vehicle_no }}</div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:2px;">{{ '2-Wheeler' if res.vehicle_type=='2w' else '4-Wheeler' }}</div>
+        </div>
+        <div style="background:{% if res.status=='completed' %}#f0fdf4{% else %}#fffbeb{% endif %};border-radius:16px;padding:12px;text-align:center;border:1px solid {% if res.status=='completed' %}#bbf7d0{% else %}#fde68a{% endif %};">
+          <div style="color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Amount</div>
+          {% if res.amount_paid and res.status=='completed' %}
+          <div style="font-size:20px;font-weight:900;color:#15803d;">₹{{ res.amount_paid|int }}</div>
+          {% if res.payment_method %}<div style="font-size:9px;color:#16a34a;margin-top:2px;font-weight:700;text-transform:uppercase;">{{ res.payment_method }}</div>{% endif %}
+          {% else %}
+          <div style="font-size:14px;font-weight:900;color:#d97706;">Pending</div>
+          <div style="font-size:9px;color:#f59e0b;margin-top:2px;">Pay at exit</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Time details -->
+      <div style="background:white;border-radius:16px;padding:14px 16px;margin-bottom:16px;border:1px solid #e5e7eb;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Entry Time</div>
+            <div style="font-size:14px;font-weight:800;color:#111827;">{{ res.entry_time.strftime('%d %b %Y') }}</div>
+            <div style="font-size:18px;font-weight:900;color:#059669;">{{ res.entry_time.strftime('%I:%M %p') }}</div>
+            <div style="font-size:10px;color:#9ca3af;">IST</div>
+          </div>
+          {% if res.exit_time %}
+          <div>
+            <div style="color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Exit Time</div>
+            <div style="font-size:14px;font-weight:800;color:#111827;">{{ res.exit_time.strftime('%d %b %Y') }}</div>
+            <div style="font-size:18px;font-weight:900;color:#dc2626;">{{ res.exit_time.strftime('%I:%M %p') }}</div>
+            <div style="font-size:10px;color:#9ca3af;">IST</div>
+          </div>
+          {% else %}
+          <div>
+            <div style="color:#6b7280;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Rate</div>
+            <div style="font-size:18px;font-weight:900;color:#111827;">₹{{ res.slot.lot.rate_2w if res.vehicle_type=='2w' else res.slot.lot.rate_4w }}<span style="font-size:12px;font-weight:600;color:#6b7280;">/hr</span></div>
+            <div style="font-size:10px;color:#f59e0b;font-weight:700;">⏱ FREE if &lt; 15 mins</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- QR Code Section -->
+      <div style="background:white;border-radius:16px;padding:16px;text-align:center;border:1px solid #e5e7eb;margin-bottom:16px;">
+        {% if qr_b64 %}
+        <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR Code"
+             style="width:140px;height:140px;margin:0 auto;display:block;image-rendering:pixelated;border-radius:8px;"/>
+        {% else %}
+        <div style="width:140px;height:140px;margin:0 auto;background:#f3f4f6;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed #d1d5db;">
+          <span style="font-size:32px;">⬛</span>
+          <span style="font-size:10px;color:#9ca3af;margin-top:4px;">QR Loading...</span>
+        </div>
+        {% endif %}
+        <div style="font-size:11px;color:#6b7280;margin-top:8px;font-weight:600;">Scan QR code at entry / exit gate</div>
+        <div style="font-size:9px;color:#d1d5db;font-family:monospace;margin-top:4px;">{{ res.qr_token[:24] }}...</div>
+      </div>
+
+      <!-- Footer Note -->
+      <div style="background:#eff6ff;border-radius:12px;padding:10px 14px;border:1px solid #bfdbfe;display:flex;gap:8px;align-items:flex-start;">
+        <span style="font-size:16px;flex-shrink:0;">ℹ️</span>
+        <div style="font-size:11px;color:#1d4ed8;line-height:1.4;">
+          <strong>Grace Period:</strong> No charge if you exit within 15 minutes of entry.
+          Keep this pass handy. Generated at {{ now_ist.strftime('%d %b %Y %I:%M %p') }} IST.
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Footer Band -->
+    <div style="background:#111827;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="color:#6b7280;font-size:10px;">SpotEasy India © 2026</div>
+      <div style="color:#4b5563;font-size:10px;font-family:monospace;">#SE{{ '%05d'|format(res.id) }}</div>
     </div>
   </div>
-  <!-- ═══ END PASS CARD ═══ -->
+  <!-- ══════════════════════════════════ END PASS ══ -->
 
-  <!-- Action Buttons (hidden on print) -->
+
+  <!-- Action Buttons -->
   <div class="mt-5 space-y-3 no-print">
 
     <!-- Language Toggle -->
     <div class="flex gap-2">
       <button onclick="setLang('en')" id="btnEN"
-        class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-slate-800 dark:bg-slate-700 text-white transition">
+        class="flex-1 py-2.5 rounded-xl text-sm font-bold bg-slate-800 dark:bg-slate-700 text-white transition hover:scale-105">
         🇬🇧 English
       </button>
       <button onclick="setLang('hi')" id="btnHI"
-        class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
+        class="flex-1 py-2.5 rounded-xl text-sm font-bold bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:border-green-400 transition hover:scale-105">
         🇮🇳 हिन्दी
       </button>
     </div>
 
+    <!-- Checkout with payment options -->
+    {% if res.status == 'active' %}
+    <div class="card">
+      <p class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">💳 Select Payment Method & Checkout</p>
+      <form method="POST" action="{{ url_for('checkout', rid=res.id) }}" id="checkoutForm">
+        <input type="hidden" name="payment_method" id="payMethodInput" value="upi"/>
+        <div class="grid grid-cols-3 gap-2 mb-4" id="payOptions">
+
+          <!-- Cash -->
+          <button type="button" onclick="selectPay('cash',this)"
+            class="pay-btn border-2 border-gray-200 dark:border-dark-600 rounded-2xl p-3 text-center transition-all hover:scale-105">
+            <div class="text-2xl mb-1">💵</div>
+            <div class="font-bold text-xs text-gray-600 dark:text-gray-300">Cash</div>
+          </button>
+
+          <!-- UPI (opens GPay / PhonePe) -->
+          <button type="button" onclick="selectPay('upi',this)"
+            class="pay-btn border-2 border-green-500 bg-green-50 dark:bg-green-950/40 rounded-2xl p-3 text-center transition-all hover:scale-105">
+            <div class="text-2xl mb-1">📱</div>
+            <div class="font-bold text-xs text-green-700 dark:text-green-300">UPI</div>
+          </button>
+
+          <!-- Card -->
+          <button type="button" onclick="selectPay('card',this)"
+            class="pay-btn border-2 border-gray-200 dark:border-dark-600 rounded-2xl p-3 text-center transition-all hover:scale-105">
+            <div class="text-2xl mb-1">💳</div>
+            <div class="font-bold text-xs text-gray-600 dark:text-gray-300">Card</div>
+          </button>
+        </div>
+
+        <!-- UPI Deep Link Panel (shown when UPI selected) -->
+        <div id="upiPanel" class="mb-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-2xl p-4">
+          <p class="text-xs font-bold text-green-700 dark:text-green-300 mb-3">
+            📱 Pay via UPI — Opens GPay / PhonePe / Paytm
+          </p>
+          <div class="grid grid-cols-3 gap-2 mb-3">
+            <a id="gpayLink" href="#" target="_blank" onclick="openUPI('gpay')"
+               class="bg-white dark:bg-dark-800 rounded-xl p-2 text-center border border-gray-200 dark:border-dark-600 hover:scale-105 transition cursor-pointer">
+              <div class="text-xl">🟦</div>
+              <div class="text-xs font-bold text-gray-600 dark:text-gray-300 mt-1">GPay</div>
+            </a>
+            <a id="phonepeLink" href="#" target="_blank" onclick="openUPI('phonepe')"
+               class="bg-white dark:bg-dark-800 rounded-xl p-2 text-center border border-gray-200 dark:border-dark-600 hover:scale-105 transition cursor-pointer">
+              <div class="text-xl">🟣</div>
+              <div class="text-xs font-bold text-gray-600 dark:text-gray-300 mt-1">PhonePe</div>
+            </a>
+            <a id="paytmLink" href="#" target="_blank" onclick="openUPI('paytm')"
+               class="bg-white dark:bg-dark-800 rounded-xl p-2 text-center border border-gray-200 dark:border-dark-600 hover:scale-105 transition cursor-pointer">
+              <div class="text-xl">🔵</div>
+              <div class="text-xs font-bold text-gray-600 dark:text-gray-300 mt-1">Paytm</div>
+            </a>
+          </div>
+          <p class="text-xs text-green-600 dark:text-green-400 text-center">
+            ⚠️ Pay first, then click Checkout below.<br/>
+            Amount will be calculated at checkout.
+          </p>
+        </div>
+
+        <button type="submit"
+          class="w-full font-bold py-3.5 rounded-2xl text-white transition-all hover:scale-[1.02]"
+          style="background:linear-gradient(135deg,#dc2626,#b91c1c);">
+          🚪 Checkout & Calculate Bill
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
     <!-- WhatsApp -->
     <a href="{{ wa_url }}" target="_blank"
-       class="flex items-center justify-center gap-3 text-white font-bold py-4 rounded-2xl transition text-base"
+       class="flex items-center justify-center gap-3 text-white font-bold py-4 rounded-2xl transition hover:scale-[1.02] hover:shadow-xl"
        style="background:linear-gradient(135deg,#25D366,#128C7E);">
-      <svg class="w-6 h-6 fill-white" viewBox="0 0 24 24">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-      </svg>
+      <svg class="w-6 h-6 fill-white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
       Share on WhatsApp
     </a>
 
-    {% if res.status == 'active' %}
-    <form method="POST" action="{{ url_for('checkout', rid=res.id) }}">
-      <button class="w-full font-bold py-4 rounded-2xl transition text-base text-white"
-              style="background:linear-gradient(135deg,#dc2626,#b91c1c);">
-        🚪 Checkout &amp; Calculate Bill
-      </button>
-    </form>
-    {% endif %}
-
-    <!-- Print -->
+    <!-- Print / PDF -->
     <button onclick="printPass()"
-      class="w-full border-2 border-gray-200 dark:border-slate-700 font-semibold py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800 transition text-sm text-gray-700 dark:text-gray-300">
-      🖨️ Print / Save as PDF
+      class="w-full border-2 border-gray-200 dark:border-slate-700 font-bold py-3.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800 transition hover:scale-[1.01] text-sm text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2">
+      <i data-lucide="printer" class="w-4 h-4"></i>
+      Save as PDF / Print Slip
     </button>
   </div>
-
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// ── Language Toggle ──────────────────────────────────────────────────────────
-const T = {
-  en: {
-    lbl1:'Slot', lbl2:'Vehicle', lbl3:'Rate',
-    lbl4:'Entry Time', lbl5:'Amount Paid',
-    lblQR:'Scan at entry / exit gate'
-  },
-  hi: {
-    lbl1:'स्लॉट', lbl2:'वाहन', lbl3:'दर',
-    lbl4:'प्रवेश समय', lbl5:'भुगतान राशि',
-    lblQR:'प्रवेश/निकास पर स्कैन करें'
-  }
-};
-function setLang(lang) {
-  Object.keys(T[lang]).forEach(k => {
-    const el = document.getElementById(k);
-    if(el) el.textContent = T[lang][k];
+// ── Payment Method Selection ────────────────────────────────────────────────
+// Vendor UPI ID — set this to the parking lot owner's UPI ID
+// For now using a placeholder; in production each lot would have its own VPA
+const VENDOR_UPI_ID = 'spoteasy@upi';  // Change to actual UPI ID
+const VENDOR_NAME   = encodeURIComponent('{{ res.slot.lot.name[:20] }}');
+const BOOKING_REF   = 'SE{{ "%05d"|format(res.id) }}';
+
+function selectPay(method, btn) {
+  document.getElementById('payMethodInput').value = method;
+  document.querySelectorAll('.pay-btn').forEach(b => {
+    b.className = b.className
+      .replace('border-green-500 bg-green-50 dark:bg-green-950/40','border-gray-200 dark:border-dark-600')
+      .replace('text-green-700 dark:text-green-300','text-gray-600 dark:text-gray-300');
   });
-  const btnEN = document.getElementById('btnEN');
-  const btnHI = document.getElementById('btnHI');
-  if(lang === 'en') {
-    btnEN.className = btnEN.className.replace('border-2 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800', '');
-    btnEN.style.cssText = 'background:#1e293b;color:white;';
-    btnHI.style.cssText = '';
-  } else {
-    btnHI.style.cssText = 'background:#1e293b;color:white;';
-    btnEN.style.cssText = '';
-  }
+  btn.className = btn.className
+    .replace('border-gray-200 dark:border-dark-600','border-green-500 bg-green-50 dark:bg-green-950/40')
+    .replace('text-gray-600 dark:text-gray-300','text-green-700 dark:text-green-300');
+
+  // Show/hide UPI panel
+  const upiPanel = document.getElementById('upiPanel');
+  upiPanel.style.display = method === 'upi' ? 'block' : 'none';
 }
 
-// ── Print only the pass card ─────────────────────────────────────────────────
+function openUPI(app) {
+  // UPI Deep Link format: upi://pay?pa=VPA&pn=NAME&tn=NOTE&cu=INR
+  // Amount is intentionally left out (0) — cashier confirms exact amount
+  const note = encodeURIComponent(`SpotEasy Parking ${BOOKING_REF}`);
+  const baseUPI = `upi://pay?pa=${VENDOR_UPI_ID}&pn=${VENDOR_NAME}&tn=${note}&cu=INR`;
+
+  let url;
+  if (app === 'gpay') {
+    // Google Pay intent
+    url = `intent://pay?pa=${VENDOR_UPI_ID}&pn=${VENDOR_NAME}&tn=${note}&cu=INR#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+  } else if (app === 'phonepe') {
+    url = `intent://pay?pa=${VENDOR_UPI_ID}&pn=${VENDOR_NAME}&tn=${note}&cu=INR#Intent;scheme=upi;package=com.phonepe.app;end`;
+  } else if (app === 'paytm') {
+    url = `intent://pay?pa=${VENDOR_UPI_ID}&pn=${VENDOR_NAME}&tn=${note}&cu=INR#Intent;scheme=upi;package=net.one97.paytm;end`;
+  } else {
+    url = baseUPI;
+  }
+
+  // On mobile: open intent. On desktop: show QR or fallback
+  if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    window.location.href = url;
+  } else {
+    // Desktop — show UPI QR or copy link
+    const upiLink = baseUPI;
+    const msg = `📱 On your phone, open GPay/PhonePe and pay to:\n\n${VENDOR_UPI_ID}\n\nReference: ${BOOKING_REF}\n\nOr copy this UPI link:\n${upiLink}`;
+    alert(msg);
+  }
+  return false;
+}
+
+// Language toggle
+const T = {
+  en: { slot:'Slot', vehicle:'Vehicle', amount:'Amount', entry:'Entry Time', rate:'Rate', qrlabel:'Scan QR code at entry / exit gate' },
+  hi: { slot:'स्लॉट', vehicle:'वाहन', amount:'राशि', entry:'प्रवेश समय', rate:'दर', qrlabel:'प्रवेश/निकास पर QR स्कैन करें' }
+};
+function setLang(lang) {
+  // Update all label divs in pass
+  document.querySelectorAll('[data-label]').forEach(el => {
+    const key = el.dataset.label;
+    if (T[lang][key]) el.textContent = T[lang][key];
+  });
+  document.getElementById('btnEN').style.cssText = lang==='en' ? 'background:#1e293b;color:white;' : '';
+  document.getElementById('btnHI').style.cssText = lang==='hi' ? 'background:#1e293b;color:white;' : '';
+}
+
+// Print ONLY the pass card
 function printPass() {
   const card = document.getElementById('passCard');
-  const win  = window.open('', '_blank', 'width=500,height=700');
-  win.document.write(`
-    <!DOCTYPE html><html><head>
-    <title>SpotEasy Pass #{{ res.id }}</title>
+  const win  = window.open('', '_blank', 'width=540,height=760');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <title>SpotEasy Pass #SE{{ '%05d'|format(res.id) }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <style>
-      *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
-      body{background:#f9fafb;display:flex;justify-content:center;padding:20px;}
+      *{margin:0;padding:0;box-sizing:border-box;}
+      body{background:#fff;display:flex;justify-content:center;padding:20px;font-family:'Inter',sans-serif;}
+      @media print{body{padding:0;}}
     </style>
     </head><body>
-    ${card.outerHTML}
-    <script>window.onload=function(){window.print();window.close();}<\/script>
-    </body></html>
-  `);
+    <div style="max-width:480px;width:100%;">${card.outerHTML}</div>
+    <script>window.onload=function(){setTimeout(()=>{window.print();},500);}<\/script>
+    </body></html>`);
   win.document.close();
 }
 </script>

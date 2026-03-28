@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}My Account — SpotEasy{% endblock %}
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+  <div class="mb-8 animate-fade-in">
+    <h1 class="text-3xl font-black text-gray-900 dark:text-white">My Account</h1>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Manage your profile and view your activity</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- LEFT: Profile Card -->
+    <div class="lg:col-span-1 space-y-5">
+
+      <!-- Avatar Card -->
+      <div class="card text-center animate-scale-in">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-xl text-4xl font-black text-white">
+          {{ current_user.name[0].upper() }}
+        </div>
+        <h2 class="font-black text-xl text-gray-900 dark:text-white">{{ current_user.name }}</h2>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ current_user.email }}</p>
+        <div class="mt-3">
+          <span class="inline-block px-3 py-1 rounded-full text-xs font-bold
+            {% if current_user.role=='admin' %}bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300
+            {% elif current_user.role=='vendor' %}bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300
+            {% else %}bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300{% endif %}">
+            {% if current_user.role=='admin' %}👑 Super Admin
+            {% elif current_user.role=='vendor' %}🅿️ Parking Vendor
+            {% else %}🚗 Customer{% endif %}
+          </span>
+        </div>
+        {% if current_user.phone %}
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-3 flex items-center justify-center gap-1">
+          <i data-lucide="phone" class="w-3.5 h-3.5"></i> +91 {{ current_user.phone }}
+        </p>
+        {% endif %}
+        <p class="text-xs text-gray-400 dark:text-gray-600 mt-2 flex items-center justify-center gap-1">
+          <i data-lucide="calendar" class="w-3 h-3"></i>
+          Member since {{ current_user.created_at.strftime('%B %Y') }}
+        </p>
+      </div>
+
+      <!-- Stats Card -->
+      {% if current_user.role == 'customer' %}
+      <div class="card animate-on-scroll">
+        <h3 class="font-bold text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Activity</h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+              <i data-lucide="bookmark" class="w-4 h-4 text-green-500"></i> Total Bookings
+            </span>
+            <span class="font-black text-gray-900 dark:text-white">{{ stats.total_bookings }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+              <i data-lucide="clock" class="w-4 h-4 text-yellow-500"></i> Active Now
+            </span>
+            <span class="font-black text-green-600">{{ stats.active }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-blue-500"></i> Completed
+            </span>
+            <span class="font-black text-gray-900 dark:text-white">{{ stats.completed }}</span>
+          </div>
+          <div class="border-t border-gray-100 dark:border-dark-700 pt-3 flex items-center justify-between">
+            <span class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <i data-lucide="indian-rupee" class="w-4 h-4 text-purple-500"></i> Total Spent
+            </span>
+            <span class="font-black text-xl text-gray-900 dark:text-white">₹{{ stats.total_spent|int }}</span>
+          </div>
+        </div>
+      </div>
+      {% elif current_user.role == 'vendor' %}
+      <div class="card animate-on-scroll">
+        <h3 class="font-bold text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">My Lots</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between"><span class="text-sm text-gray-600 dark:text-gray-300">Total Lots</span><span class="font-black text-gray-900 dark:text-white">{{ stats.total_lots }}</span></div>
+          <div class="flex justify-between"><span class="text-sm text-gray-600 dark:text-gray-300">Active Lots</span><span class="font-black text-green-600">{{ stats.active_lots }}</span></div>
+          <div class="flex justify-between"><span class="text-sm text-gray-600 dark:text-gray-300">Total Slots</span><span class="font-black text-gray-900 dark:text-white">{{ stats.total_slots }}</span></div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT: Edit Forms -->
+    <div class="lg:col-span-2 space-y-5">
+
+      <!-- Update Profile -->
+      <div class="card animate-on-scroll">
+        <h3 class="font-black text-lg text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+            <i data-lucide="user" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+          </div>
+          Edit Profile
+        </h3>
+        <form method="POST" class="space-y-4">
+          <input type="hidden" name="action" value="update_profile"/>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Full Name</label>
+              <input type="text" name="name" value="{{ current_user.name }}" required minlength="3" class="inp"/>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Phone</label>
+              <div class="flex gap-2">
+                <span class="inp w-14 text-center font-bold shrink-0 bg-gray-50 dark:bg-dark-700 cursor-default text-sm">+91</span>
+                <input type="tel" name="phone" value="{{ current_user.phone or '' }}" maxlength="10" placeholder="9876543210" class="inp flex-1"/>
+              </div>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
+              <input type="email" value="{{ current_user.email }}" disabled
+                     class="inp bg-gray-50 dark:bg-dark-800 cursor-not-allowed opacity-60"/>
+              <p class="text-xs text-gray-400 mt-1">Email cannot be changed. Contact admin if needed.</p>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-sm">
+            Save Changes ✓
+          </button>
+        </form>
+      </div>
+
+      <!-- Change Password -->
+      <div class="card animate-on-scroll">
+        <h3 class="font-black text-lg text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-yellow-100 dark:bg-yellow-900/40 flex items-center justify-center">
+            <i data-lucide="lock" class="w-4 h-4 text-yellow-600 dark:text-yellow-400"></i>
+          </div>
+          Change Password
+        </h3>
+        <form method="POST" class="space-y-4" id="pwForm">
+          <input type="hidden" name="action" value="change_password"/>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Current Password</label>
+            <input type="password" name="old_password" required class="inp" placeholder="Your current password"/>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
+              <input type="password" name="new_password" id="newPw" required minlength="8" class="inp" placeholder="Min 8 chars"/>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Confirm New Password</label>
+              <input type="password" name="confirm_password" id="confPw" required class="inp" placeholder="Repeat new password"/>
+            </div>
+          </div>
+          <p id="pwMatchErr" class="text-red-500 text-xs hidden">⚠️ Passwords do not match.</p>
+          <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all hover:scale-105">
+            Update Password 🔒
+          </button>
+        </form>
+      </div>
+
+      <!-- Recent Bookings (customer only) -->
+      {% if current_user.role == 'customer' and stats.recent %}
+      <div class="card animate-on-scroll">
+        <h3 class="font-black text-lg text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+            <i data-lucide="history" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+          </div>
+          Recent Bookings
+        </h3>
+        <div class="space-y-3">
+          {% for r in stats.recent %}
+          <a href="{{ url_for('digital_pass', rid=r.id) }}"
+             class="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-all hover:scale-[1.01] group">
+            <div>
+              <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ r.slot.lot.name }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ r.slot.label }} · {{ r.vehicle_no }} · {{ r.entry_time.strftime('%d %b %Y') }}</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold px-2 py-1 rounded-full
+                {% if r.status=='active' %}bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300
+                {% else %}bg-gray-100 dark:bg-dark-700 text-gray-500{% endif %}">
+                {{ '🟢' if r.status=='active' else '✅' }} {{ r.status }}
+              </span>
+              {% if r.amount_paid %}<p class="text-sm font-black text-gray-900 dark:text-white mt-1">₹{{ r.amount_paid|int }}</p>{% endif %}
+            </div>
+          </a>
+          {% endfor %}
+          <a href="{{ url_for('customer_dashboard') }}" class="block text-center text-sm text-green-600 dark:text-green-400 font-semibold hover:underline pt-1">
+            View all bookings →
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Password match check
+document.getElementById('confPw')?.addEventListener('input', function() {
+  const err = document.getElementById('pwMatchErr');
+  if (this.value && this.value !== document.getElementById('newPw').value) {
+    err.classList.remove('hidden');
+  } else {
+    err.classList.add('hidden');
+  }
+});
+document.getElementById('pwForm')?.addEventListener('submit', function(e) {
+  if (document.getElementById('newPw').value !== document.getElementById('confPw').value) {
+    e.preventDefault();
+    document.getElementById('pwMatchErr').classList.remove('hidden');
+  }
+});
+</script>
+{% endblock %}

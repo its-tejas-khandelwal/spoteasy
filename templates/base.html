@@ -34,6 +34,7 @@ tailwind.config = {
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="/static/keep-alive.js" defer></script>
 <style>
 *, *::before, *::after { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 
@@ -169,12 +170,18 @@ tailwind.config = {
           <a href="{{ url_for('lots_list') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
             <i data-lucide="map-pin" class="w-4 h-4"></i> Find Parking
           </a>
+          <a href="{{ url_for('account') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="user-circle" class="w-4 h-4"></i> Profile
+          </a>
         {% elif current_user.role == 'vendor' %}
           <a href="{{ url_for('vendor_dashboard') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
             <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
           </a>
           <a href="{{ url_for('add_lot') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Lot
+          </a>
+          <a href="{{ url_for('account') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="user-circle" class="w-4 h-4"></i> Profile
           </a>
         {% elif current_user.role == 'admin' %}
           <a href="{{ url_for('admin_dashboard') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
@@ -183,6 +190,14 @@ tailwind.config = {
           <a href="{{ url_for('admin_db_view') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
             <i data-lucide="database" class="w-4 h-4"></i> DB
           </a>
+        {% endif %}
+        <!-- Account icon (always visible) -->
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}"
+           class="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-dark-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-all hover:scale-110"
+           title="My Account">
+          <i data-lucide="user-circle" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+        </a>
         {% endif %}
         <a href="{{ url_for('logout') }}" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
           <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -264,6 +279,73 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+{% if current_user.is_authenticated %}
+<!-- Firebase Push Notifications -->
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
+<script src="/static/notifications.js"></script>
+<script>
+// Only init if Firebase config is set in environment
+const fbConfig = {
+  apiKey:            "{{ config.get('FIREBASE_API_KEY','') }}",
+  authDomain:        "{{ config.get('FIREBASE_AUTH_DOMAIN','') }}",
+  projectId:         "{{ config.get('FIREBASE_PROJECT_ID','') }}",
+  storageBucket:     "{{ config.get('FIREBASE_STORAGE_BUCKET','') }}",
+  messagingSenderId: "{{ config.get('FIREBASE_SENDER_ID','') }}",
+  appId:             "{{ config.get('FIREBASE_APP_ID','') }}"
+};
+if (fbConfig.apiKey && fbConfig.apiKey !== '') {
+  SpotEasyNotif.vapidKey = "{{ config.get('FIREBASE_VAPID_KEY','') }}";
+  SpotEasyNotif.init(fbConfig);
+
+  // Show notification prompt after 3 seconds if not yet asked
+  setTimeout(() => {
+    if (Notification.permission === 'default') {
+      const banner = document.getElementById('notifBanner');
+      if (banner) banner.classList.remove('hidden');
+    }
+  }, 3000);
+}
+</script>
+
+<!-- Notification Permission Banner -->
+<div id="notifBanner" class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50 no-print">
+  <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 shadow-2xl">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
+        <span class="text-xl">🔔</span>
+      </div>
+      <div class="flex-1">
+        <p class="font-bold text-sm text-gray-900 dark:text-white">Enable Notifications</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Get instant alerts for bookings, reminders & offers.</p>
+        <div class="flex gap-2 mt-3">
+          <button onclick="enableNotif()"
+            class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 rounded-xl transition">
+            Allow 🔔
+          </button>
+          <button onclick="document.getElementById('notifBanner').remove()"
+            class="flex-1 border border-gray-200 dark:border-slate-600 text-xs font-semibold py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition text-gray-600 dark:text-gray-300">
+            Later
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+async function enableNotif() {
+  const ok = await SpotEasyNotif.requestPermission();
+  document.getElementById('notifBanner').remove();
+  if (ok) {
+    // Show success toast
+    const t = document.createElement('div');
+    t.innerHTML = `<div style="position:fixed;bottom:20px;right:16px;z-index:9999;background:#16a34a;color:white;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.2);">✅ Notifications enabled!</div>`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+}
+</script>
+{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>

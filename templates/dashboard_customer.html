@@ -1,5 +1,27 @@
 {% extends "base.html" %}
-{% block title %}My Bookings — SpotEasy{% endblock %}
+{% block title %}My Bookings — SpotEasy{% block scripts %}
+<script>
+// Silent status refresh — updates active/completed counts every 30s
+SpotEasyRefresh.register(async () => {
+  const r = await fetch('/api/customer/stats');
+  if (!r.ok) return;
+  const d = await r.json();
+  // Update stat numbers smoothly
+  const els = document.querySelectorAll('[data-stat]');
+  els.forEach(el => {
+    const key = el.dataset.stat;
+    if (d[key] !== undefined && el.textContent != String(d[key])) {
+      el.style.transition = 'transform 0.3s,opacity 0.3s';
+      el.style.opacity = '0'; el.style.transform = 'scale(0.8)';
+      setTimeout(() => {
+        el.textContent = key === 'total_spent' ? '₹' + d[key] : d[key];
+        el.style.opacity = '1'; el.style.transform = 'scale(1)';
+      }, 200);
+    }
+  });
+});
+</script>
+{% endblock %}
 {% block content %}
 {% set active_list = reservations|selectattr('status','eq','active')|list %}
 {% set done_list = reservations|selectattr('status','eq','completed')|list %}

@@ -16,6 +16,7 @@ class User(UserMixin, db.Model):
     phone        = db.Column(db.String(15))
     is_approved  = db.Column(db.Boolean, default=True)
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    fcm_token    = db.Column(db.String(512))  # Firebase push token
 
     lots         = db.relationship('ParkingLot', backref='owner', lazy=True, cascade='all, delete-orphan')
     reservations = db.relationship('Reservation', backref='customer', lazy=True, cascade='all, delete-orphan')
@@ -90,5 +91,7 @@ class Reservation(db.Model):
     exit_time    = db.Column(db.DateTime)
     amount_paid  = db.Column(db.Numeric(10,2), default=0)
     status       = db.Column(db.String(20), default='active')
-    qr_token     = db.Column(db.String(64), unique=True, default=lambda: secrets.token_hex(32))
+    qr_token      = db.Column(db.String(64), unique=True, default=lambda: secrets.token_hex(32))
+    payment_method = db.Column(db.String(20), default='cash')  # cash / upi / card
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    fcm_token    = db.Column(db.String(512))  # Firebase push token
