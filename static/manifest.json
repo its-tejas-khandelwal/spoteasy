@@ -6,15 +6,16 @@
   "display": "standalone",
   "background_color": "#0f1117",
   "theme_color": "#16a34a",
-  "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en-IN",
   "icons": [
-    { "src": "/static/icons/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any maskable" },
-    { "src": "/static/icons/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any maskable" },
-    { "src": "/static/icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/static/icons/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "/static/icons/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "/static/icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
@@ -30,8 +31,5 @@
       "icons": [{ "src": "/static/icons/icon-96.png", "sizes": "96x96" }]
     }
   ],
-  "categories": ["travel", "utilities"],
-  "screenshots": [
-    { "src": "/static/screenshots/home.png", "sizes": "390x844", "type": "image/png", "label": "SpotEasy Home" }
-  ]
+  "categories": ["travel", "utilities"]
 }
