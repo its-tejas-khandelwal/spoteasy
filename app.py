@@ -47,16 +47,20 @@ def load_user(uid):
     return db.session.get(User, int(uid))
 
 with app.app_context():
-    db.create_all()
-    # Create admin if not exists
-    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@parksmart.in')
-    admin_pw    = os.environ.get('ADMIN_PASSWORD', 'Admin@1234')
-    if not User.query.filter_by(email=admin_email).first():
-        admin = User(name='Super Admin', email=admin_email, role='admin', is_approved=True)
-        admin.set_password(admin_pw)
-        db.session.add(admin)
-        db.session.commit()
-        print(f"[DB] Admin created: {admin_email} / {admin_pw}")
+    try:
+        db.create_all()
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@parksmart.in')
+        admin_pw    = os.environ.get('ADMIN_PASSWORD', 'Admin@1234')
+        if not User.query.filter_by(email=admin_email).first():
+            admin = User(name='Super Admin', email=admin_email, role='admin', is_approved=True)
+            admin.set_password(admin_pw)
+            db.session.add(admin)
+            db.session.commit()
+            print(f"[DB] Admin created: {admin_email}")
+        print("[DB] Database ready ✅")
+    except Exception as e:
+        print(f"[DB] WARNING: Could not connect to DB on startup: {e}")
+        print("[DB] App will still start — check DATABASE_URL in environment")
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def _safe_decimal(val, default=0):
