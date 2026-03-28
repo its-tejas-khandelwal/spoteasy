@@ -4,13 +4,22 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>{% block title %}SpotEasy{% endblock %}</title>
-<!-- CRITICAL: Catch PWA install prompt FIRST before anything else -->
+<!-- PWA: Catch install prompt as early as possible -->
 <script>
   window._pwaPrompt = null;
+  window._pwaInstalled = false;
+  // Listen immediately - before any other script
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
     window._pwaPrompt = e;
-    console.log('[PWA] Install prompt captured ✅');
+    console.log('[SpotEasy PWA] ✅ Prompt ready');
+    // Show install UI as soon as prompt is available
+    setTimeout(function(){ if(window.showInstallUI) window.showInstallUI(); }, 100);
+  });
+  window.addEventListener('appinstalled', function() {
+    window._pwaInstalled = true;
+    window._pwaPrompt = null;
+    console.log('[SpotEasy PWA] ✅ Installed!');
   });
 </script>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -423,31 +432,47 @@ let deferredPrompt = null;
   }
 
   function handleInstallClick() {
-    // iOS Safari — show step by step
+    // iOS Safari
     if (isIOS) { showIOSPopup(); return; }
 
-    // Use window._pwaPrompt (captured earliest) OR deferredPrompt
-    const prompt = window._pwaPrompt || deferredPrompt;
-
-    if (prompt) {
-      prompt.prompt();
-      prompt.userChoice.then(r => {
+    // Try prompt from multiple sources
+    const p = window._pwaPrompt || deferredPrompt;
+    if (p) {
+      p.prompt();
+      p.userChoice.then(function(r) {
         if (r.outcome === 'accepted') {
           dismissInstall();
-          showToast('🎉 SpotEasy installed! Open from your home screen.');
-          window._pwaPrompt = null;
-          deferredPrompt = null;
-        } else {
-          window._pwaPrompt = null;
-          deferredPrompt = null;
+          showToast('🎉 SpotEasy installed successfully!');
         }
+        window._pwaPrompt = null;
+        deferredPrompt = null;
       });
       return;
     }
 
-    // No prompt — show manual instructions
+    // Prompt not available — guide user to install manually
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      showToast('✅ SpotEasy is already installed on your device!');
+      return;
+    }
+
+    // Show the right manual instructions
     showManualPopup();
   }
+
+  // Make showInstallUI globally accessible (called from early script)
+  window.showInstallUI = function() {
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
+    if (localStorage.getItem('install_dismissed')) return;
+    if (window.innerWidth < 768) {
+      var fb = document.getElementById('installFloatBtn');
+      if (fb) fb.style.display = 'block';
+    } else {
+      var tb = document.getElementById('installTopBanner');
+      if (tb) tb.style.display = 'block';
+    }
+  };
 
   function showIOSPopup() {
     const d = document.createElement('div');
@@ -472,21 +497,36 @@ let deferredPrompt = null;
   }
 
   function showManualPopup() {
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const d = document.createElement('div');
-    d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
-    d.innerHTML=`<div style="background:white;border-radius:28px;padding:28px;width:100%;max-width:440px;color:#111827;text-align:center;">
-      <img src="/static/icons/icon-72.png" style="width:60px;height:60px;border-radius:16px;margin-bottom:12px;"/>
-      <div style="font-size:20px;font-weight:900;margin-bottom:8px;">Install SpotEasy</div>
-      <div style="background:#f0fdf4;border-radius:14px;padding:14px;font-size:14px;color:#374151;text-align:left;line-height:2.2;border:1px solid #bbf7d0;margin-bottom:16px;">
-        ${isAndroid
-          ? '<div>1️⃣ Tap <strong>3-dot menu ⋮</strong> in Chrome</div><div>2️⃣ Tap <strong>"Add to Home screen"</strong></div><div>3️⃣ Tap <strong>"Add"</strong> ✅</div>'
-          : '<div>1️⃣ Look for <strong>install icon ⊕</strong> in address bar</div><div>2️⃣ Or browser menu → <strong>"Install SpotEasy"</strong></div><div>3️⃣ Click <strong>"Install"</strong> ✅</div>'
-        }
+    var ua = navigator.userAgent;
+    var isAndroid = /Android/i.test(ua);
+    var isChrome  = /Chrome/i.test(ua) && !/Edge/i.test(ua);
+    var d = document.createElement('div');
+    d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    d.innerHTML=`<div style="background:white;border-radius:28px;padding:28px;width:100%;max-width:460px;color:#111827;text-align:center;">
+      <img src="/static/icons/icon-72.png" style="width:64px;height:64px;border-radius:18px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);"/>
+      <div style="font-size:22px;font-weight:900;margin-bottom:4px;">Install SpotEasy</div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Free · Works Offline · No App Store</div>
+
+      ${isAndroid ? `
+      <div style="background:#f0fdf4;border-radius:14px;padding:16px;font-size:14px;color:#374151;text-align:left;line-height:2.4;border:1px solid #bbf7d0;">
+        <div>1️⃣ Tap <strong>3-dot menu ⋮</strong> in Chrome (top right)</div>
+        <div>2️⃣ Tap <strong>"Add to Home screen"</strong></div>
+        <div>3️⃣ Tap <strong>"Add"</strong> ✅</div>
+      </div>` : `
+      <div style="background:#f0fdf4;border-radius:14px;padding:16px;font-size:14px;color:#374151;text-align:left;line-height:2.4;border:1px solid #bbf7d0;">
+        <div>1️⃣ Look for <strong>⊕ install icon</strong> in the address bar</div>
+        <div>2️⃣ Or press <strong>Ctrl+Shift+A</strong> (Chrome shortcut)</div>
+        <div>3️⃣ Or Chrome menu (⋮) → <strong>"Install SpotEasy..."</strong></div>
       </div>
+      <div style="background:#fff7ed;border-radius:12px;padding:12px;font-size:12px;color:#92400e;border:1px solid #fed7aa;margin-top:10px;text-align:left;">
+        ⚠️ <strong>If install option missing:</strong> Open Chrome → go to
+        <code style="background:#fef3c7;padding:1px 4px;border-radius:4px;">chrome://settings/content/all</code>
+        → find this site → clear data → refresh page → try again.
+      </div>`}
+
       <button onclick="this.closest('div[style*=inset]').remove()"
-        style="width:100%;background:linear-gradient(135deg,#16a34a,#22c55e);color:white;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;">
-        OK, got it! ✅
+        style="width:100%;margin-top:16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:white;border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(22,163,74,0.4);">
+        OK, I'll try! 👍
       </button>
     </div>`;
     document.body.appendChild(d);
