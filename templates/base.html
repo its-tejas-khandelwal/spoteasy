@@ -4,24 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>{% block title %}SpotEasy{% endblock %}</title>
-<!-- PWA: Catch install prompt as early as possible -->
-<script>
-  window._pwaPrompt = null;
-  window._pwaInstalled = false;
-  // Listen immediately - before any other script
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    window._pwaPrompt = e;
-    console.log('[SpotEasy PWA] ✅ Prompt ready');
-    // Show install UI as soon as prompt is available
-    setTimeout(function(){ if(window.showInstallUI) window.showInstallUI(); }, 100);
-  });
-  window.addEventListener('appinstalled', function() {
-    window._pwaInstalled = true;
-    window._pwaPrompt = null;
-    console.log('[SpotEasy PWA] ✅ Installed!');
-  });
-</script>
+
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- PWA -->
 <link rel="manifest" href="/static/manifest.json"/>
@@ -395,172 +378,451 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Install prompt
+// PWA Install
 let deferredPrompt = null;
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    deferredPrompt = e;
-    setTimeout(showInstallUI, 1500);
-  });
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstallUI();
+});
 
-  if (isIOS && !isStandalone) {
-    setTimeout(showInstallUI, 1500);
+function showInstallUI() {
+  if (isStandalone || localStorage.getItem('se_installed')) return;
+  var isMob = window.innerWidth < 768;
+  var fb = document.getElementById('installFloatBtn');
+  var tb = document.getElementById('installTopBanner');
+  if (isMob) { if(fb) fb.style.display='block'; }
+  else { if(tb) tb.style.display='block'; }
+  if (isIOS && fb) fb.style.display='block';
+}
+
+function dismissInstall() {
+  var fb=document.getElementById('installFloatBtn');
+  var tb=document.getElementById('installTopBanner');
+  if(fb) fb.style.display='none';
+  if(tb) tb.style.display='none';
+}
+
+function handleInstallClick() {
+  if (isIOS) { showIOSSteps(); return; }
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(r) {
+      if (r.outcome==='accepted') {
+        dismissInstall();
+        var t=document.createElement('div');
+        t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#16a34a;color:white;padding:12px 22px;border-radius:14px;font-size:14px;font-weight:700;z-index:9999;';
+        t.textContent='SpotEasy installed! Open from home screen.';
+        document.body.appendChild(t);
+        setTimeout(function(){t.remove();},3000);
+      }
+      deferredPrompt=null;
+    });
+    return;
   }
+  showInstallSteps();
+}
 
-  function showInstallUI() {
-    if (isStandalone) return;
-    if (localStorage.getItem('install_dismissed')) return;
-    if (window.innerWidth < 768) {
-      const fb = document.getElementById('installFloatBtn');
-      if (fb) fb.style.display = 'block';
-    } else {
-      const tb = document.getElementById('installTopBanner');
-      if (tb) tb.style.display = 'block';
-    }
-  }
+function showIOSSteps() {
+  var d=document.createElement('div');
+  d.id='pwaModal';
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:16px;';
+  d.innerHTML='<div style="background:white;border-radius:24px;padding:24px;width:100%;max-width:420px;color:#111827;">'
+    +'<div style="text-align:center;margin-bottom:16px;">'
+    +'<img src="/static/icons/icon-72.png" style="width:52px;height:52px;border-radius:14px;"/>'
+    +'<div style="font-size:19px;font-weight:900;margin-top:8px;">Install on iPhone/iPad</div>'
+    +'</div>'
+    +'<div style="background:#f0fdf4;border-radius:12px;padding:14px;font-size:14px;line-height:2.4;color:#374151;border:1px solid #bbf7d0;">'
+    +'<div>1. Tap <b>Share button</b> at the bottom of Safari</div>'
+    +'<div>2. Tap <b>Add to Home Screen</b></div>'
+    +'<div>3. Tap <b>Add</b> - Done!</div>'
+    +'</div>'
+    +'<button onclick="document.getElementById('pwaModal').remove()" style="width:100%;margin-top:14px;background:#16a34a;color:white;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;">'
+    +'Got it!</button></div>';
+  document.body.appendChild(d);
+}
 
-  function dismissInstall() {
-    const fb = document.getElementById('installFloatBtn');
-    const tb = document.getElementById('installTopBanner');
-    if (fb) fb.style.display = 'none';
-    if (tb) tb.style.display = 'none';
-    localStorage.setItem('install_dismissed', '1');
-  }
+function showInstallSteps() {
+  var isMob=/Android/i.test(navigator.userAgent);
+  var d=document.createElement('div');
+  d.id='pwaModal2';
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  d.innerHTML='<div style="background:white;border-radius:24px;padding:24px;width:100%;max-width:400px;color:#111827;text-align:center;">'
+    +'<img src="/static/icons/icon-72.png" style="width:52px;height:52px;border-radius:14px;margin-bottom:10px;"/>'
+    +'<div style="font-size:18px;font-weight:900;margin-bottom:12px;">Install SpotEasy</div>'
+    +'<div style="background:#f0fdf4;border-radius:12px;padding:14px;text-align:left;font-size:14px;line-height:2.3;color:#374151;border:1px solid #bbf7d0;">'
+    +(isMob
+      ?'<div>1. Tap <b>3-dot menu</b> in Chrome</div><div>2. Tap <b>Add to Home screen</b></div><div>3. Tap <b>Add</b></div>'
+      :'<div>1. Look for <b>install icon</b> in address bar</div><div>2. Or Chrome menu &gt; <b>Install SpotEasy</b></div><div>3. Click <b>Install</b></div>')
+    +'</div>'
+    +'<button onclick="document.getElementById('pwaModal2').remove()" style="width:100%;margin-top:14px;background:#16a34a;color:white;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;">'
+    +'OK!</button></div>';
+  document.body.appendChild(d);
+}
 
-  function handleInstallClick() {
-    // iOS Safari
-    if (isIOS) { showIOSPopup(); return; }
+window.addEventListener('appinstalled', function() {
+  dismissInstall();
+  localStorage.setItem('se_installed','1');
+});
 
-    // Try prompt from multiple sources
-    const p = window._pwaPrompt || deferredPrompt;
-    if (p) {
-      p.prompt();
-      p.userChoice.then(function(r) {
-        if (r.outcome === 'accepted') {
-          dismissInstall();
-          showToast('🎉 SpotEasy installed successfully!');
-        }
-        window._pwaPrompt = null;
-        deferredPrompt = null;
-      });
-      return;
-    }
-
-    // Prompt not available — guide user to install manually
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      showToast('✅ SpotEasy is already installed on your device!');
-      return;
-    }
-
-    // Show the right manual instructions
-    showManualPopup();
-  }
-
-  // Make showInstallUI globally accessible (called from early script)
-  window.showInstallUI = function() {
-    if (window.matchMedia('(display-mode: standalone)').matches) return;
-    if (localStorage.getItem('install_dismissed')) return;
-    if (window.innerWidth < 768) {
-      var fb = document.getElementById('installFloatBtn');
-      if (fb) fb.style.display = 'block';
-    } else {
-      var tb = document.getElementById('installTopBanner');
-      if (tb) tb.style.display = 'block';
-    }
-  };
-
-  function showIOSPopup() {
-    const d = document.createElement('div');
-    d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:16px;';
-    d.innerHTML=`<div style="background:white;border-radius:28px;padding:28px;width:100%;max-width:440px;color:#111827;">
-      <div style="text-align:center;margin-bottom:20px;">
-        <img src="/static/icons/icon-72.png" style="width:60px;height:60px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.1);"/>
-        <div style="font-size:20px;font-weight:900;margin-top:10px;">Install SpotEasy</div>
-        <div style="font-size:13px;color:#6b7280;">Free app · No App Store needed</div>
-      </div>
-      <div style="background:#f0fdf4;border-radius:16px;padding:16px;font-size:14px;line-height:2.4;color:#374151;border:1px solid #bbf7d0;">
-        <div>1️⃣ Tap <strong>Share</strong> <span style="font-size:18px;">⬆️</span> at the bottom of Safari</div>
-        <div>2️⃣ Scroll and tap <strong>"Add to Home Screen" 📲</strong></div>
-        <div>3️⃣ Tap <strong>"Add"</strong> — SpotEasy icon appears! 🎉</div>
-      </div>
-      <button onclick="this.closest('div[style*=inset]').remove()"
-        style="width:100%;margin-top:16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:white;border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(22,163,74,0.4);">
-        Got it! 👍
-      </button>
-    </div>`;
-    document.body.appendChild(d);
-  }
-
-  function showManualPopup() {
-    var ua = navigator.userAgent;
-    var isAndroid = /Android/i.test(ua);
-    var isChrome  = /Chrome/i.test(ua) && !/Edge/i.test(ua);
-    var d = document.createElement('div');
-    d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
-    d.innerHTML=`<div style="background:white;border-radius:28px;padding:28px;width:100%;max-width:460px;color:#111827;text-align:center;">
-      <img src="/static/icons/icon-72.png" style="width:64px;height:64px;border-radius:18px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);"/>
-      <div style="font-size:22px;font-weight:900;margin-bottom:4px;">Install SpotEasy</div>
-      <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Free · Works Offline · No App Store</div>
-
-      ${isAndroid ? `
-      <div style="background:#f0fdf4;border-radius:14px;padding:16px;font-size:14px;color:#374151;text-align:left;line-height:2.4;border:1px solid #bbf7d0;">
-        <div>1️⃣ Tap <strong>3-dot menu ⋮</strong> in Chrome (top right)</div>
-        <div>2️⃣ Tap <strong>"Add to Home screen"</strong></div>
-        <div>3️⃣ Tap <strong>"Add"</strong> ✅</div>
-      </div>` : `
-      <div style="background:#f0fdf4;border-radius:14px;padding:16px;font-size:14px;color:#374151;text-align:left;line-height:2.4;border:1px solid #bbf7d0;">
-        <div>1️⃣ Look for <strong>⊕ install icon</strong> in the address bar</div>
-        <div>2️⃣ Or press <strong>Ctrl+Shift+A</strong> (Chrome shortcut)</div>
-        <div>3️⃣ Or Chrome menu (⋮) → <strong>"Install SpotEasy..."</strong></div>
-      </div>
-      <div style="background:#fff7ed;border-radius:12px;padding:12px;font-size:12px;color:#92400e;border:1px solid #fed7aa;margin-top:10px;text-align:left;">
-        ⚠️ <strong>If install option missing:</strong> Open Chrome → go to
-        <code style="background:#fef3c7;padding:1px 4px;border-radius:4px;">chrome://settings/content/all</code>
-        → find this site → clear data → refresh page → try again.
-      </div>`}
-
-      <button onclick="this.closest('div[style*=inset]').remove()"
-        style="width:100%;margin-top:16px;background:linear-gradient(135deg,#16a34a,#22c55e);color:white;border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(22,163,74,0.4);">
-        OK, I'll try! 👍
-      </button>
-    </div>`;
-    document.body.appendChild(d);
-  }
-
-  function showToast(msg) {
-    const t = document.createElement('div');
-    t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#16a34a;color:white;padding:12px 24px;border-radius:14px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.2);';
-    t.textContent=msg; document.body.appendChild(t);
-    setTimeout(()=>t.remove(),3500);
-  }
-
-  window.addEventListener('appinstalled', () => {
-    dismissInstall();
-  });
-
-  document.addEventListener('DOMContentLoaded', showInstallUI);
+document.addEventListener('DOMContentLoaded', function() {
+  if (isIOS && !isStandalone) showInstallUI();
+});
 
   </script>
 
-<!-- PWA Install Banner -->
-<div id="installBanner" class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50 no-print animate-fade-in">
+
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{% block title %}SpotEasy{% endblock %}</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- PWA -->
+<link rel="manifest" href="/static/manifest.json"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="SpotEasy"/>
+<meta name="theme-color" content="#16a34a"/>
+<meta name="description" content="Smart Parking for Every Indian City — Find, Book, Park"/>
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png"/>
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#16a34a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="SpotEasy"/>
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png"/>
+<link rel="apple-touch-icon" sizes="152x152" href="/static/icons/icon-152.png"/>
+<link rel="apple-touch-icon" sizes="144x144" href="/static/icons/icon-144.png"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="application-name" content="SpotEasy"/>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        brand: { 50:'#f0fdf4',100:'#dcfce7',400:'#4ade80',500:'#22c55e',600:'#16a34a',700:'#15803d' },
+        dark:  { 800:'#1a1f2e', 900:'#0f1117', 950:'#080b11' }
+      },
+      keyframes: {
+        'fade-up':   { '0%':{ opacity:'0', transform:'translateY(16px)' }, '100%':{ opacity:'1', transform:'translateY(0)' } },
+        'fade-in':   { '0%':{ opacity:'0' }, '100%':{ opacity:'1' } },
+        'scale-in':  { '0%':{ transform:'scale(0.95)', opacity:'0' }, '100%':{ transform:'scale(1)', opacity:'1' } },
+        'slide-right':{ '0%':{ transform:'translateX(-20px)', opacity:'0' }, '100%':{ transform:'translateX(0)', opacity:'1' } },
+        'glow-pulse':{ '0%,100%':{ boxShadow:'0 0 0 0 rgba(34,197,94,0.4)' }, '50%':{ boxShadow:'0 0 0 10px rgba(34,197,94,0)' } }
+      },
+      animation: {
+        'fade-up':    'fade-up 0.4s ease both',
+        'fade-in':    'fade-in 0.3s ease both',
+        'scale-in':   'scale-in 0.3s ease both',
+        'slide-right':'slide-right 0.4s ease both',
+        'glow-pulse': 'glow-pulse 2s infinite',
+      }
+    }
+  }
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="/static/keep-alive.js" defer></script>
+<style>
+*, *::before, *::after { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #22c55e44; border-radius: 99px; }
+
+/* ── Cards ── */
+.card {
+  background: white;
+  border-radius: 1.25rem;
+  border: 1px solid #f0f0f0;
+  padding: 1.5rem;
+  transition: all 0.25s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+.dark .card { background: #1a1f2e; border-color: #2d3548; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.dark .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+
+/* ── Navbar ── */
+.navbar {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.dark .navbar {
+  background: rgba(10,13,20,0.92);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ── Slots ── */
+.slot-available {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  border: 2px solid #22c55e;
+  color: #15803d;
+}
+.slot-occupied {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border: 2px solid #ef4444;
+  color: #991b1b;
+}
+.dark .slot-available { background: linear-gradient(135deg,rgba(34,197,94,0.2),rgba(34,197,94,0.1)); border-color:#4ade80; color:#86efac; }
+.dark .slot-occupied  { background: linear-gradient(135deg,rgba(239,68,68,0.2),rgba(239,68,68,0.1));  border-color:#f87171; color:#fca5a5; }
+
+/* ── Buttons ── */
+.btn-primary {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white; font-weight: 700;
+  border-radius: 0.875rem; padding: 0.75rem 1.5rem;
+  transition: all 0.2s; border: none; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.35);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34,197,94,0.45); }
+.btn-primary:active { transform: translateY(0); }
+
+/* ── Input ── */
+.inp {
+  width: 100%; border: 2px solid #e5e7eb;
+  background: white; border-radius: 0.75rem;
+  padding: 0.75rem 1rem; font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+}
+.inp:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+.dark .inp { background: #1a1f2e; border-color: #2d3548; color: #f1f5f9; }
+.dark .inp:focus { border-color: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,0.15); }
+
+/* ── Print ── */
+@media print {
+  nav, footer, .no-print { display: none !important; }
+  body { background: white !important; color: black !important; }
+  #passCard { max-width: 420px; margin: 0 auto; border-radius: 1rem; overflow: hidden; }
+}
+
+/* ── Stagger animation for children ── */
+.stagger > * { animation: fade-up 0.4s ease both; }
+.stagger > *:nth-child(1){ animation-delay:0.05s }
+.stagger > *:nth-child(2){ animation-delay:0.10s }
+.stagger > *:nth-child(3){ animation-delay:0.15s }
+.stagger > *:nth-child(4){ animation-delay:0.20s }
+.stagger > *:nth-child(5){ animation-delay:0.25s }
+.stagger > *:nth-child(6){ animation-delay:0.30s }
+</style>
+<script>
+(function(){
+  const t = localStorage.getItem('ps_theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.classList.toggle('dark', t === 'dark');
+})();
+</script>
+</head>
+
+<body class="min-h-screen bg-gray-50 dark:bg-dark-950 text-gray-900 dark:text-slate-100 transition-colors duration-300">
+
+<!-- ── Navbar ────────────────────────────────────────────────────────────── -->
+<nav class="navbar sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-2.5 group">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+        <i data-lucide="parking-circle" class="w-5 h-5 text-white"></i>
+      </div>
+      <div class="flex flex-col leading-none">
+        <span class="font-black text-lg text-gray-900 dark:text-white tracking-tight">SpotEasy</span>
+        <span class="text-xs text-green-600 dark:text-green-400 font-semibold -mt-0.5">India 🇮🇳</span>
+      </div>
+    </a>
+
+    <!-- Nav Links -->
+    <div class="flex items-center gap-1 sm:gap-2">
+      {% if current_user.is_authenticated %}
+        <!-- User badge -->
+        <div class="hidden sm:flex items-center gap-2 bg-gray-100 dark:bg-dark-800 px-3 py-1.5 rounded-xl mr-1">
+          <div class="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white text-xs font-bold">
+            {{ current_user.name[0].upper() }}
+          </div>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ current_user.name.split()[0] }}</span>
+          <span class="text-xs px-1.5 py-0.5 rounded-md font-semibold
+            {% if current_user.role=='admin' %}bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300
+            {% elif current_user.role=='vendor' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
+            {% else %}bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300{% endif %}">
+            {{ current_user.role }}
+          </span>
+        </div>
+
+        {% if current_user.role == 'customer' %}
+          <a href="{{ url_for('customer_dashboard') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+          </a>
+          <a href="{{ url_for('lots_list') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> Find Parking
+          </a>
+          <a href="{{ url_for('account') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="user-circle" class="w-4 h-4"></i> Profile
+          </a>
+        {% elif current_user.role == 'vendor' %}
+          <a href="{{ url_for('vendor_dashboard') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+          </a>
+          <a href="{{ url_for('add_lot') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Lot
+          </a>
+          <a href="{{ url_for('account') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="user-circle" class="w-4 h-4"></i> Profile
+          </a>
+        {% elif current_user.role == 'admin' %}
+          <a href="{{ url_for('admin_dashboard') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="shield-check" class="w-4 h-4"></i> Admin Panel
+          </a>
+          <a href="{{ url_for('admin_db_view') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="database" class="w-4 h-4"></i> DB
+          </a>
+        {% endif %}
+        <!-- Account icon (always visible) -->
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}"
+           class="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-dark-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-all hover:scale-110"
+           title="My Account">
+          <i data-lucide="user-circle" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+        </a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Logout</span>
+        </a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 transition-all">Login</a>
+        <a href="{{ url_for('register') }}" class="btn-primary text-sm px-4 py-2 rounded-xl">Register</a>
+      {% endif %}
+
+      <!-- Theme Toggle -->
+      <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-dark-800 hover:bg-gray-200 dark:hover:bg-dark-700 transition-all hover:scale-110 active:scale-95" aria-label="Toggle theme">
+        <i data-lucide="sun" class="w-4 h-4 text-amber-500 dark:hidden"></i>
+        <i data-lucide="moon" class="w-4 h-4 text-indigo-400 hidden dark:block"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Flash Messages ─────────────────────────────────────────────────────── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="max-w-7xl mx-auto px-4 mt-4 space-y-2 no-print animate-fade-in">
+    {% for category, message in messages %}
+    <div class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold
+      {% if category=='danger'  %}bg-red-50    dark:bg-red-950/50    text-red-700    dark:text-red-300    border border-red-200    dark:border-red-800
+      {% elif category=='success'%}bg-green-50  dark:bg-green-950/50  text-green-700  dark:text-green-300  border border-green-200  dark:border-green-800
+      {% elif category=='warning'%}bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800
+      {% else                   %}bg-blue-50   dark:bg-blue-950/50   text-blue-700   dark:text-blue-300   border border-blue-200   dark:border-blue-800{% endif %}">
+      <i data-lucide="{% if category=='danger' %}alert-circle{% elif category=='success' %}check-circle-2{% else %}info{% endif %}" class="w-4 h-4 shrink-0"></i>
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer class="no-print border-t border-gray-100 dark:border-dark-800 mt-16 py-6">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-400 dark:text-gray-600">
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+        <i data-lucide="parking-circle" class="w-3 h-3 text-white"></i>
+      </div>
+      <span class="font-semibold text-gray-500 dark:text-gray-500">SpotEasy</span>
+      <span>&copy; 2026</span>
+    </div>
+    <span class="text-green-500 font-mono text-xs">{{ now_ist.strftime('%d %b %Y · %I:%M %p IST') }}</span>
+  </div>
+</footer>
+
+<script>
+lucide.createIcons();
+function toggleTheme(){
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('ps_theme', isDark ? 'dark' : 'light');
+  lucide.createIcons();
+}
+// Intersection observer for scroll animations
+document.addEventListener('DOMContentLoaded', () => {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'none';
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.animate-on-scroll').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    obs.observe(el);
+  });
+});
+</script>
+{% if current_user.is_authenticated %}
+<!-- Firebase Push Notifications -->
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
+<script src="/static/notifications.js"></script>
+<script>
+// Only init if Firebase config is set in environment
+const fbConfig = {
+  apiKey:            "{{ config.get('FIREBASE_API_KEY','') }}",
+  authDomain:        "{{ config.get('FIREBASE_AUTH_DOMAIN','') }}",
+  projectId:         "{{ config.get('FIREBASE_PROJECT_ID','') }}",
+  storageBucket:     "{{ config.get('FIREBASE_STORAGE_BUCKET','') }}",
+  messagingSenderId: "{{ config.get('FIREBASE_SENDER_ID','') }}",
+  appId:             "{{ config.get('FIREBASE_APP_ID','') }}"
+};
+if (fbConfig.apiKey && fbConfig.apiKey !== '') {
+  SpotEasyNotif.vapidKey = "{{ config.get('FIREBASE_VAPID_KEY','') }}";
+  SpotEasyNotif.init(fbConfig);
+
+  // Show notification prompt after 3 seconds if not yet asked
+  setTimeout(() => {
+    if (Notification.permission === 'default') {
+      const banner = document.getElementById('notifBanner');
+      if (banner) banner.classList.remove('hidden');
+    }
+  }, 3000);
+}
+</script>
+
+<!-- Notification Permission Banner -->
+<div id="notifBanner" class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50 no-print">
   <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 shadow-2xl">
     <div class="flex items-start gap-3">
-      <img src="/static/icons/icon-72.png" class="w-12 h-12 rounded-xl shadow" alt="SpotEasy"/>
+      <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
+        <span class="text-xl">🔔</span>
+      </div>
       <div class="flex-1">
-        <p class="font-black text-sm text-gray-900 dark:text-white">Install SpotEasy App</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Add to home screen for faster access — works offline too!</p>
+        <p class="font-bold text-sm text-gray-900 dark:text-white">Enable Notifications</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Get instant alerts for bookings, reminders & offers.</p>
         <div class="flex gap-2 mt-3">
-          <button onclick="installApp()"
-            class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 rounded-xl transition hover:scale-105">
-            📲 Install App
+          <button onclick="enableNotif()"
+            class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 rounded-xl transition">
+            Allow 🔔
           </button>
-          <button onclick="document.getElementById('installBanner').remove()"
+          <button onclick="document.getElementById('notifBanner').remove()"
             class="flex-1 border border-gray-200 dark:border-slate-600 text-xs font-semibold py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition text-gray-600 dark:text-gray-300">
             Later
           </button>
@@ -569,157 +831,27 @@ let deferredPrompt = null;
     </div>
   </div>
 </div>
-
-{% block scripts %}{% endblock %}
 <script>
-// Register Service Worker for PWA
+async function enableNotif() {
+  const ok = await SpotEasyNotif.requestPermission();
+  document.getElementById('notifBanner').remove();
+  if (ok) {
+    // Show success toast
+    const t = document.createElement('div');
+    t.innerHTML = `<div style="position:fixed;bottom:20px;right:16px;z-index:9999;background:#16a34a;color:white;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.2);">✅ Notifications enabled!</div>`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+}
+</script>
+{% endif %}
+<!-- PWA Service Worker Registration -->
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('[SpotEasy PWA] SW registered'))
-      .catch(e => console.log('[SpotEasy PWA] SW failed:', e));
+      .then(reg => console.log('[PWA] SW registered:', reg.scope))
+      .catch(e  => console.log('[PWA] SW error:', e));
   });
 }
 
-// PWA Install prompt
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Show install banner after 5 seconds
-  setTimeout(() => {
-    const banner = document.getElementById('pwaInstallBanner');
-    if (banner && !localStorage.getItem('pwa_dismissed')) {
-      banner.classList.remove('hidden');
-    }
-  }, 5000);
-});
-
-function installPWA() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(r => {
-      if (r.outcome === 'accepted') console.log('[PWA] Installed!');
-      deferredPrompt = null;
-    });
-  }
-  document.getElementById('pwaInstallBanner')?.remove();
-}
-function dismissPWA() {
-  localStorage.setItem('pwa_dismissed', '1');
-  document.getElementById('pwaInstallBanner')?.remove();
-}
-</script>
-
-<!-- PWA Install Banner (auto-shows after 3 seconds) -->
-<div id="pwaInstallBanner" class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 no-print">
-  <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-3xl p-5 shadow-2xl"
-       style="animation:slideUpIn 0.4s cubic-bezier(.4,0,.2,1)">
-    <div class="flex items-start gap-4 mb-4">
-      <img src="/static/icons/icon-72.png" class="w-14 h-14 rounded-2xl shadow-lg shrink-0"/>
-      <div class="flex-1 min-w-0">
-        <p class="font-black text-base text-gray-900 dark:text-white">Install SpotEasy</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Free app · Works offline · No App Store needed</p>
-        <div class="flex gap-2 mt-1 flex-wrap">
-          <span class="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full font-semibold">📱 Android</span>
-          <span class="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-semibold">🍎 iPhone</span>
-          <span class="text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-semibold">💻 Desktop</span>
-        </div>
-      </div>
-      <button onclick="dismissPWA()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold leading-none shrink-0">✕</button>
-    </div>
-
-    <!-- Android/Desktop install button -->
-    <div id="androidInstallDiv">
-      <button onclick="installPWA()"
-        class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-black py-3 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-sm shadow-lg">
-        <i data-lucide="download" class="w-4 h-4"></i> Install App — It's Free!
-      </button>
-    </div>
-
-    <!-- iOS instructions (shown on iPhone/iPad) -->
-    <div id="iosInstallDiv" class="hidden">
-      <div class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-2xl p-3 text-xs text-blue-700 dark:text-blue-300">
-        <p class="font-bold mb-2">📱 Install on iPhone/iPad:</p>
-        <div class="space-y-1.5">
-          <div class="flex items-center gap-2">
-            <span class="bg-blue-200 dark:bg-blue-800 rounded-lg px-2 py-0.5 font-bold">1</span>
-            <span>Tap the <strong>Share button</strong> <span style="font-size:16px;">⬆️</span> at the bottom of Safari</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="bg-blue-200 dark:bg-blue-800 rounded-lg px-2 py-0.5 font-bold">2</span>
-            <span>Scroll and tap <strong>"Add to Home Screen"</strong> 📲</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="bg-blue-200 dark:bg-blue-800 rounded-lg px-2 py-0.5 font-bold">3</span>
-            <span>Tap <strong>"Add"</strong> — SpotEasy icon appears on your home screen!</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<style>
-@keyframes slideUpIn {
-  from { transform: translateY(100%); opacity: 0; }
-  to   { transform: translateY(0);   opacity: 1; }
-}
-</style>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!--   INSTALL APP — Floating Bottom Button (Mobile)        -->
-<!--   + Top Banner (Desktop)                               -->
-<!-- ═══════════════════════════════════════════════════════ -->
-
-<!-- TOP BANNER — Desktop & Tablet (hidden on small phones) -->
-<div id="installTopBanner" class="no-print"
-  style="display:none;position:fixed;top:64px;left:0;right:0;z-index:999;background:linear-gradient(135deg,#14532d,#166534);border-bottom:1px solid rgba(34,197,94,0.3);padding:10px 20px;">
-  <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <img src="/static/icons/icon-72.png" style="width:36px;height:36px;border-radius:10px;"/>
-      <div>
-        <span style="color:white;font-weight:800;font-size:14px;">Install SpotEasy App</span>
-        <span style="color:#86efac;font-size:12px;margin-left:8px;">Free · Works Offline · No App Store needed</span>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <button onclick="handleInstallClick()"
-        style="background:#16a34a;color:white;border:none;border-radius:10px;padding:8px 18px;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
-        📲 Install Free
-      </button>
-      <button onclick="dismissInstall()"
-        style="background:rgba(255,255,255,0.1);color:#86efac;border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer;">
-        ✕
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- FLOATING BUTTON — Mobile (bottom right corner) -->
-<div id="installFloatBtn" class="no-print"
-  style="display:none;position:fixed;bottom:24px;right:16px;z-index:999;">
-  <button onclick="handleInstallClick()"
-    style="display:flex;flex-direction:column;align-items:center;gap:4px;background:linear-gradient(135deg,#16a34a,#22c55e);color:white;border:none;border-radius:20px;padding:14px 18px;font-weight:800;font-size:12px;cursor:pointer;box-shadow:0 8px 24px rgba(22,163,74,0.5);animation:floatPulse 3s ease-in-out infinite;">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="7 10 12 15 17 10"/>
-      <line x1="12" y1="15" x2="12" y2="3"/>
-    </svg>
-    <span>Install</span>
-    <span>App</span>
-  </button>
-  <!-- Dismiss X -->
-  <button onclick="dismissInstall()"
-    style="position:absolute;top:-8px;right:-8px;background:#ef4444;color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:900;">✕</button>
-</div>
-
-<style>
-@keyframes floatPulse {
-  0%,100% { transform: translateY(0);    box-shadow: 0 8px 24px rgba(22,163,74,0.5); }
-  50%      { transform: translateY(-6px); box-shadow: 0 16px 32px rgba(22,163,74,0.6); }
-}
-</style>
-
-</body>
-</html>
