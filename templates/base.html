@@ -238,7 +238,7 @@ tailwind.config = {
 </footer>
 
 <!-- INSTALL APP: Floating button (mobile) -->
-<div id="installFloatBtn" style="display:none;position:fixed;bottom:20px;right:16px;z-index:998;">
+<div id="installFloatBtn" style="display:block;position:fixed;bottom:20px;right:16px;z-index:998;">
   <button onclick="doInstall()"
     style="display:flex;flex-direction:column;align-items:center;gap:3px;background:linear-gradient(135deg,#16a34a,#22c55e);color:white;border:none;border-radius:20px;padding:13px 16px;font-weight:800;font-size:11px;cursor:pointer;box-shadow:0 8px 28px rgba(22,163,74,0.55);">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -253,7 +253,7 @@ tailwind.config = {
 </div>
 
 <!-- INSTALL APP: Top banner (desktop/tablet) -->
-<div id="installTopBanner" style="display:none;position:fixed;top:64px;left:0;right:0;z-index:997;background:linear-gradient(135deg,#14532d,#166534);border-bottom:1px solid rgba(34,197,94,0.3);padding:10px 20px;">
+<div id="installTopBanner" style="display:block;position:fixed;top:64px;left:0;right:0;z-index:997;background:linear-gradient(135deg,#14532d,#166534);border-bottom:1px solid rgba(34,197,94,0.3);padding:10px 20px;">
   <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
     <div style="display:flex;align-items:center;gap:10px;">
       <img src="/static/icons/icon-72.png" style="width:36px;height:36px;border-radius:10px;"/>
@@ -403,10 +403,28 @@ window.addEventListener('appinstalled', function() {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Show for iOS always
-  if (isIOS && !isStandalone) showInstallUI();
-  // Show for others if prompt already captured
-  if (window._dPrompt) showInstallUI();
+  // Always show the right button based on screen size
+  if (isStandalone || localStorage.getItem('se_installed')) {
+    // Already installed — hide both
+    var fb = document.getElementById('installFloatBtn');
+    var tb = document.getElementById('installTopBanner');
+    if (fb) fb.style.display = 'none';
+    if (tb) tb.style.display = 'none';
+    return;
+  }
+  if (localStorage.getItem('se_hide')) {
+    var fb = document.getElementById('installFloatBtn');
+    var tb = document.getElementById('installTopBanner');
+    if (fb) fb.style.display = 'none';
+    if (tb) tb.style.display = 'none';
+    return;
+  }
+  // Show correct button for screen size
+  if (window.innerWidth < 768) {
+    document.getElementById('installTopBanner').style.display = 'none';
+  } else {
+    document.getElementById('installFloatBtn').style.display = 'none';
+  }
 });
 </script>
 
