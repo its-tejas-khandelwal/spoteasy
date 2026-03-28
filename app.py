@@ -634,6 +634,11 @@ def export_csv(table):
     response.headers['Content-Disposition'] = f'attachment; filename=spoteasy_{table}.csv'
     return response
 
+# ── Loading / Splash Page ─────────────────────────────────────────────────────
+@app.route('/loading')
+def loading():
+    return send_from_directory('static', 'loading.html')
+
 # ── Terms of Use ──────────────────────────────────────────────────────────────
 @app.route('/terms')
 def terms():
