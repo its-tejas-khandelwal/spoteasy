@@ -44,7 +44,10 @@ login_manager.login_message = 'Please log in to continue.'
 
 @login_manager.user_loader
 def load_user(uid):
-    return db.session.get(User, int(uid))
+    try:
+        return db.session.get(User, int(uid))
+    except (ValueError, TypeError):
+        return None
 
 with app.app_context():
     try:
