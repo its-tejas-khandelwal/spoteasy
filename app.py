@@ -26,31 +26,49 @@ from models import (db, User, ParkingLot, ParkingSlot, Reservation,
 # ── DB URL helper ────────────────────────────────────────────────
 def _fix_db_url(url: str) -> str:
     """
-    Normalise Supabase / Heroku / Render database URLs.
-    - 'postgres://'      → 'postgresql://'          (SQLAlchemy 2.x)
-    - 'postgresql://'   → 'postgresql+psycopg://'   (psycopg3 driver)
+    Normalise Supabase / Heroku / Render database URLs for psycopg3.
+
+    Supabase gives:  postgresql://postgres:PASS@db.XXX.supabase.co:5432/postgres
+    SQLAlchemy needs: postgresql+psycopg://...  (psycopg3 dialect)
+
     SQLite URLs are returned unchanged.
     """
-    if url.startswith("sqlite"):
-        return url
-    url = url.replace("postgres://", "postgresql://")
-    # Switch to psycopg3 dialect if not already set
+    if not url or url.startswith("sqlite"):
+        return url or "sqlite:///parksmart.db"
+
+    # Fix old Heroku 'postgres://' shorthand
+    url = url.replace("postgres://", "postgresql://", 1)
+
+    # Switch to psycopg3 dialect
     if url.startswith("postgresql://") and "+psycopg" not in url:
         url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    # Supabase requires SSL — add sslmode if not already present
+    if "supabase" in url and "sslmode" not in url:
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}sslmode=require"
+
     return url
 
 
 # ── App factory ──────────────────────────────────────────────────
 def create_app():
     app = Flask(__name__)
+
+    raw_db_url = os.getenv("DATABASE_URL", "sqlite:///parksmart.db")
+    db_url     = _fix_db_url(raw_db_url)
+    is_sqlite  = db_url.startswith("sqlite")
+
     app.config.update(
-        SECRET_KEY            = os.getenv("SECRET_KEY", "dev-change-me-please"),
-        SQLALCHEMY_DATABASE_URI = _fix_db_url(os.getenv(
-            "DATABASE_URL",
-            "sqlite:///parksmart.db"           # SQLite for local dev — no setup needed
-        )),
+        SECRET_KEY                     = os.getenv("SECRET_KEY", "dev-change-me-please"),
+        SQLALCHEMY_DATABASE_URI        = db_url,
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
-        SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True},
+        SQLALCHEMY_ENGINE_OPTIONS      = {
+            "pool_pre_ping":   True,
+            # Keep Supabase connections alive; not needed for SQLite
+            "pool_recycle":    300 if not is_sqlite else -1,
+            "connect_args":    {} if is_sqlite else {"connect_timeout": 10},
+        },
     )
 
     db.init_app(app)
@@ -177,7 +195,8 @@ def _public_routes(app):
 
     @app.route("/map")
     def map_view():
-        return render_template("map.html")
+        # Redirect to lots_list which has the embedded Leaflet map
+        return redirect(url_for("lots_list"))
 
 
 def _auth_routes(app, bcrypt):
@@ -261,7 +280,9 @@ def _customer_routes(app):
     @login_required
     def lots_list():
         lots = ParkingLot.query.filter_by(status=LotStatus.active).all()
-        return render_template("lots_list.html", lots=lots)
+        # Pass pre-serialised JSON so Jinja doesn't have to call methods
+        lots_json = [lot.to_dict() for lot in lots]
+        return render_template("lots_list.html", lots=lots, lots_json=lots_json)
 
     @app.route("/lots/<lot_id>/book", methods=["GET", "POST"])
     @role_required(UserRole.customer)
@@ -542,6 +563,30 @@ def _admin_routes(app):
 
 def _api_routes(app):
     """JSON API endpoints for JavaScript polling."""
+
+    @app.route("/health")
+    def health():
+        """
+        Visit https://your-app.onrender.com/health to verify DB is connected.
+        Returns JSON with db status and user count.
+        """
+        try:
+            user_count = User.query.count()
+            lot_count  = ParkingLot.query.count()
+            return jsonify({
+                "status":     "ok",
+                "db":         "connected ✅",
+                "users":      user_count,
+                "lots":       lot_count,
+                "db_url_type": "sqlite" if "sqlite" in app.config["SQLALCHEMY_DATABASE_URI"] else "postgresql",
+            })
+        except Exception as e:
+            return jsonify({
+                "status": "error ❌",
+                "db":     "NOT connected",
+                "error":  str(e),
+                "hint":   "Set DATABASE_URL environment variable in Render dashboard",
+            }), 500
 
     @app.route("/api/lots/nearby")
     def api_nearby():

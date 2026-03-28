@@ -30,15 +30,16 @@
   {% else %}
 
   <!-- Stats -->
-  {% set total_slots = lots|sum(attribute='slots')|list|length %}
-  {% set total_lots  = lots|length %}
-  {% set active_lots = lots|selectattr('status.value','eq','active')|list|length %}
+  {% set total_slots  = lots | map(attribute='slots') | map('length') | sum %}
+  {% set active_lots  = lots | selectattr('status.value','eq','active') | list | length %}
+  {% set avail_total  = lots | map(attribute='total_available') | sum %}
+  {% set pending_lots = lots | selectattr('status.value','eq','pending') | list | length %}
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
     {% for v,l,icon,c in [
-      (total_lots,'Total Lots','🏢','#6366f1'),
-      (active_lots,'Active Lots','✅','#10b981'),
-      (lots|sum(attribute='total_available'),'Available Slots','🟢','#f59e0b'),
-      (lots|selectattr('status.value','eq','pending')|list|length,'Pending Approval','⏳','#0ea5e9'),
+      (lots|length,      'Total Lots',       '🏢','#6366f1'),
+      (active_lots,      'Active Lots',      '✅','#10b981'),
+      (avail_total,      'Available Slots',  '🟢','#f59e0b'),
+      (pending_lots,     'Pending Approval', '⏳','#0ea5e9'),
     ] %}
     <div class="stat-card">
       <div class="stat-icon" style="background:{{c}}1a;font-size:18px;">{{icon}}</div>
