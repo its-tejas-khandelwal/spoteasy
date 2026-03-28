@@ -4,277 +4,222 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>SpotEasy — Loading...</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
-body{background:#0f1117;color:white;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow:hidden;}
+body{background:#0f1117;color:white;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden;}
 
-/* Background animated dots */
-.bg{position:fixed;inset:0;z-index:0;overflow:hidden;}
-.dot{position:absolute;border-radius:50%;opacity:0.15;animation:float linear infinite;}
-@keyframes float{0%{transform:translateY(100vh) scale(0)}100%{transform:translateY(-100px) scale(1)}}
+/* Floating dots background */
+.bg-dots{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.dot{position:absolute;border-radius:50%;opacity:0.12;}
+@keyframes floatUp{from{transform:translateY(110vh) scale(0.5)}to{transform:translateY(-10vh) scale(1)}}
 
-/* Main card */
-.card{position:relative;z-index:1;width:100%;max-width:480px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:28px;padding:32px;backdrop-filter:blur(20px);box-shadow:0 25px 60px rgba(0,0,0,0.4);}
+/* Card */
+.card{position:relative;z-index:1;width:100%;max-width:460px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:28px;padding:28px;backdrop-filter:blur(20px);box-shadow:0 24px 60px rgba(0,0,0,0.5);}
 
 /* Logo */
-.logo{width:72px;height:72px;background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px;box-shadow:0 0 40px rgba(34,197,94,0.4);animation:logoPulse 2s infinite;}
-@keyframes logoPulse{0%,100%{box-shadow:0 0 30px rgba(34,197,94,0.4);}50%{box-shadow:0 0 60px rgba(34,197,94,0.7);}}
+.logo{width:68px;height:68px;background:linear-gradient(135deg,#16a34a,#22c55e);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 14px;box-shadow:0 0 40px rgba(34,197,94,0.4);}
+@keyframes logoPulse{0%,100%{box-shadow:0 0 30px rgba(34,197,94,0.4)}50%{box-shadow:0 0 60px rgba(34,197,94,0.7)}}
+.logo{animation:logoPulse 2s infinite;}
 
-.title{font-size:26px;font-weight:900;text-align:center;margin-bottom:4px;}
-.sub{color:#6b7280;font-size:14px;text-align:center;margin-bottom:24px;}
+.title{font-size:24px;font-weight:900;text-align:center;margin-bottom:4px;}
+.subtitle{color:#6b7280;font-size:13px;text-align:center;margin-bottom:20px;}
 
-/* Progress bar */
-.progress-wrap{background:rgba(255,255,255,0.08);border-radius:99px;height:8px;overflow:hidden;margin-bottom:10px;}
-.progress-bar{height:8px;background:linear-gradient(90deg,#16a34a,#4ade80);border-radius:99px;width:0%;transition:width 0.5s ease;}
-.progress-text{font-size:12px;color:#4ade80;font-weight:700;text-align:center;margin-bottom:24px;min-height:18px;}
+/* Progress */
+.prog-wrap{background:rgba(255,255,255,0.08);border-radius:99px;height:8px;overflow:hidden;margin-bottom:8px;}
+.prog-bar{height:8px;background:linear-gradient(90deg,#16a34a,#4ade80);border-radius:99px;width:5%;transition:width 0.6s ease;}
+.prog-txt{font-size:12px;color:#4ade80;font-weight:700;text-align:center;margin-bottom:20px;min-height:16px;}
 
-/* Divider */
-.divider{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:20px 0;}
+hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:16px 0;}
 
-/* ── QUIZ SECTION ── */
-.quiz-label{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
-.question{font-size:16px;font-weight:800;color:white;margin-bottom:16px;line-height:1.4;min-height:48px;}
-.options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-.opt{background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px 10px;font-size:13px;font-weight:600;color:#e5e7eb;cursor:pointer;transition:all 0.2s;text-align:center;line-height:1.3;}
+/* Quiz */
+.quiz-label{font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.question{font-size:15px;font-weight:800;color:white;margin-bottom:14px;line-height:1.5;min-height:46px;}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.opt{background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.1);border-radius:14px;padding:11px 8px;font-size:12px;font-weight:600;color:#e5e7eb;cursor:pointer;transition:all 0.2s;text-align:center;line-height:1.3;width:100%;}
 .opt:hover{background:rgba(34,197,94,0.15);border-color:#22c55e;color:white;transform:scale(1.02);}
-.opt.correct{background:rgba(34,197,94,0.25);border-color:#4ade80;color:#4ade80;}
-.opt.wrong{background:rgba(239,68,68,0.2);border-color:#f87171;color:#f87171;}
-.opt.reveal{background:rgba(34,197,94,0.15);border-color:#22c55e;color:#4ade80;}
-.opt:disabled{cursor:default;transform:none;}
+.opt.correct{background:rgba(34,197,94,0.25)!important;border-color:#4ade80!important;color:#4ade80!important;}
+.opt.wrong{background:rgba(239,68,68,0.2)!important;border-color:#f87171!important;color:#f87171!important;}
+.opt.show-ans{background:rgba(34,197,94,0.15)!important;border-color:#22c55e!important;color:#4ade80!important;}
 
-/* Score */
-.score-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;}
-.score-badge{background:rgba(34,197,94,0.2);border:1px solid rgba(34,197,94,0.4);color:#4ade80;font-weight:800;padding:4px 12px;border-radius:99px;}
-.fact-box{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:14px;padding:12px 14px;font-size:13px;color:#86efac;line-height:1.5;margin-top:12px;min-height:44px;display:none;}
+.score-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-bottom:10px;}
+.score-badge{background:rgba(34,197,94,0.2);border:1px solid rgba(34,197,94,0.4);color:#4ade80;font-weight:800;padding:3px 10px;border-radius:99px;font-size:12px;}
+.fact{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:12px;padding:10px 12px;font-size:12px;color:#86efac;line-height:1.5;margin-top:10px;display:none;}
 
-/* Fun tip ticker */
-.tip-ticker{margin-top:20px;background:rgba(255,255,255,0.04);border-radius:12px;padding:10px 14px;font-size:12px;color:#9ca3af;text-align:center;min-height:36px;}
-.tip-ticker span{color:#4ade80;font-weight:700;}
+/* Tip */
+.tip{margin-top:16px;background:rgba(255,255,255,0.04);border-radius:10px;padding:10px 12px;font-size:11px;color:#9ca3af;text-align:center;min-height:32px;}
+.tip b{color:#4ade80;}
 </style>
 </head>
 <body>
 
-<!-- Animated background -->
-<div class="bg" id="bg"></div>
+<div class="bg-dots" id="bgDots"></div>
 
 <div class="card">
-  <!-- Logo & Title -->
   <div class="logo">🅿️</div>
   <div class="title">SpotEasy India</div>
-  <div class="sub">Smart Parking for Every Indian City 🇮🇳</div>
+  <div class="subtitle">Smart Parking for Every Indian City 🇮🇳</div>
 
-  <!-- Progress -->
-  <div class="progress-wrap">
-    <div class="progress-bar" id="progressBar"></div>
-  </div>
-  <div class="progress-text" id="progressText">Waking up server...</div>
+  <div class="prog-wrap"><div class="prog-bar" id="progBar"></div></div>
+  <div class="prog-txt" id="progTxt">Waking up server...</div>
 
-  <hr class="divider"/>
+  <hr/>
 
-  <!-- Quiz -->
   <div class="quiz-label">🧠 Quick Quiz — While you wait!</div>
   <div class="question" id="qText">Loading question...</div>
   <div class="options" id="opts"></div>
   <div class="score-row">
-    <span style="color:#6b7280;font-size:13px;" id="qCounter">Question 1/5</span>
-    <span class="score-badge" id="scoreBox">Score: 0</span>
+    <span style="color:#6b7280;font-size:12px;" id="qNum">Question 1 / 5</span>
+    <span class="score-badge" id="scoreEl">Score: 0</span>
   </div>
-  <div class="fact-box" id="factBox"></div>
-
-  <!-- SpotEasy tip ticker -->
-  <div class="tip-ticker" id="tipTicker">💡 Loading tip...</div>
+  <div class="fact" id="factEl"></div>
+  <div class="tip" id="tipEl">💡 Loading tip...</div>
 </div>
 
 <script>
-// ── Background floating dots ─────────────────────────────────────────────────
-const bg = document.getElementById('bg');
-const colors = ['#16a34a','#22c55e','#4ade80','#86efac'];
-for(let i=0;i<18;i++){
-  const d=document.createElement('div');
-  const size=Math.random()*80+20;
-  d.className='dot';
-  d.style.cssText=`width:${size}px;height:${size}px;background:${colors[i%4]};left:${Math.random()*100}%;animation-duration:${Math.random()*12+8}s;animation-delay:${Math.random()*8}s;`;
-  bg.appendChild(d);
+// Background floating dots
+var bgDots = document.getElementById('bgDots');
+var colors = ['#16a34a','#22c55e','#4ade80','#86efac'];
+for (var i = 0; i < 16; i++) {
+  var d = document.createElement('div');
+  var size = Math.random() * 70 + 20;
+  d.className = 'dot';
+  d.style.cssText = 'width:'+size+'px;height:'+size+'px;background:'+colors[i%4]+';left:'+Math.random()*100+'%;animation:floatUp '+(Math.random()*10+8)+'s linear '+(Math.random()*8)+'s infinite;';
+  bgDots.appendChild(d);
 }
 
-// ── Quiz Data ────────────────────────────────────────────────────────────────
-const QUIZ = [
-  {
-    q: "🇮🇳 What is the minimum free parking time in SpotEasy?",
-    opts: ["5 minutes","10 minutes","15 minutes","30 minutes"],
-    ans: 2,
-    fact: "SpotEasy gives a 15-minute grace period — if you exit within 15 mins, parking is completely FREE! ⏱️"
-  },
-  {
-    q: "🚗 How many Indians buy a new car every year?",
-    opts: ["10 Lakh","30 Lakh","42 Lakh","60 Lakh"],
-    ans: 2,
-    fact: "India sells ~42 lakh cars annually, making smart parking solutions critically important for our cities! 🚗"
-  },
-  {
-    q: "📱 What does UPI stand for?",
-    opts: ["United Payment Interface","Unified Payments Interface","Universal Payment Index","Unique Payment ID"],
-    ans: 1,
-    fact: "UPI (Unified Payments Interface) processes over 10 billion transactions monthly in India! 🏦"
-  },
-  {
-    q: "🅿️ Which Indian city has the worst parking problem?",
-    opts: ["Delhi","Mumbai","Bengaluru","Chennai"],
-    ans: 2,
-    fact: "Bengaluru has 1 crore+ vehicles but parking for only 20 lakh — SpotEasy aims to solve exactly this! 🏙️"
-  },
-  {
-    q: "🌐 What does PWA stand for?",
-    opts: ["Private Web App","Progressive Web App","Public Web Access","Premium Web App"],
-    ans: 1,
-    fact: "SpotEasy is a PWA — Progressive Web App! You can install it on your phone without the App Store. 📱"
-  },
-  {
-    q: "⚡ What is the full form of IoT?",
-    opts: ["Internet of Things","Index of Technology","Interface of Tools","Internet of Transactions"],
-    ans: 0,
-    fact: "SpotEasy can integrate with IoT sensors like HC-SR04 ultrasonic sensors for automatic slot detection! 🔌"
-  },
-  {
-    q: "🏆 How many parking spaces does India need by 2030?",
-    opts: ["1 Crore","5 Crore","10 Crore","50 Crore"],
-    ans: 2,
-    fact: "India needs 10 crore+ parking spaces by 2030. Smart digital platforms like SpotEasy are the solution! 🚀"
-  },
+// Quiz questions
+var QUESTIONS = [
+  { q:'What is SpotEasy\'s free grace period?', opts:['5 mins','10 mins','15 mins','30 mins'], ans:2, fact:'SpotEasy gives 15 minutes free! If you exit within 15 mins, no charge at all.' },
+  { q:'How many Indians buy a car every year?', opts:['10 Lakh','25 Lakh','42 Lakh','60 Lakh'], ans:2, fact:'India sells ~42 lakh cars annually — making smart parking solutions critical!' },
+  { q:'What does UPI stand for?', opts:['United Payment Interface','Unified Payments Interface','Universal Pay Index','Unique Payment ID'], ans:1, fact:'UPI processes 10+ billion transactions monthly in India! SpotEasy supports UPI & Cash.' },
+  { q:'What does PWA stand for?', opts:['Private Web App','Progressive Web App','Premium Web Access','Public Web App'], ans:1, fact:'SpotEasy is a PWA! Install it on your phone without any App Store.' },
+  { q:'Which city has the worst parking problem in India?', opts:['Delhi','Mumbai','Bengaluru','Chennai'], ans:2, fact:'Bengaluru has 1 crore+ vehicles but parking for only 20 lakh — SpotEasy fixes this!' },
+  { q:'SpotEasy supports which payment methods?', opts:['Only Cash','Only UPI','Cash & UPI','Card Only'], ans:2, fact:'SpotEasy supports Cash and UPI payments. Easy, fast, and contactless!' },
+  { q:'What does IoT stand for?', opts:['Internet of Things','Index of Technology','Interface of Tools','Intranet of Things'], ans:0, fact:'IoT sensors can auto-detect parking slots. SpotEasy can integrate with HC-SR04 sensors!' },
 ];
 
-// ── Tips ─────────────────────────────────────────────────────────────────────
-const TIPS = [
-  "💡 Tip: Use <span>UPI</span> for instant contactless parking payment",
-  "🔔 Tip: Enable <span>notifications</span> to get booking alerts instantly",
-  "📱 Tip: Install SpotEasy as an app — works <span>offline</span> too!",
-  "⏱️ Tip: <span>Grace period</span> — exit within 15 mins and pay nothing!",
-  "🗺️ Tip: Use <span>GPS</span> on Find Parking to discover nearest lots",
-  "🎫 Tip: Your <span>QR pass</span> is unique — show it at entry/exit gate",
-  "🛵 Tip: SpotEasy has <span>separate rates</span> for 2-wheelers and 4-wheelers",
+// Tips
+var TIPS = [
+  '💡 Use <b>UPI</b> for instant contactless payment at checkout',
+  '🔔 Enable <b>notifications</b> to get real-time booking alerts',
+  '📱 Install SpotEasy — works <b>offline</b> too!',
+  '⏱️ <b>Grace period</b> — exit within 15 mins and pay nothing!',
+  '🗺️ Use <b>Find Parking</b> to discover nearest lots on the map',
+  '🎫 Show your <b>QR pass</b> at entry and exit gate',
+  '🛵 SpotEasy has <b>separate slots</b> for 2-wheelers and 4-wheelers',
 ];
 
-// ── State ────────────────────────────────────────────────────────────────────
-let qIndex = 0, score = 0, answered = false;
-const shuffled = [...QUIZ].sort(() => Math.random()-0.5).slice(0,5);
+// Progress stages
+var STAGES = [
+  {pct:8,  msg:'🌐 Connecting to server...'},
+  {pct:18, msg:'🗄️ Waking up database...'},
+  {pct:32, msg:'🔧 Loading application...'},
+  {pct:48, msg:'🗺️ Fetching parking data...'},
+  {pct:60, msg:'🔐 Setting up security...'},
+  {pct:74, msg:'📱 Preparing your experience...'},
+  {pct:85, msg:'🎯 Almost there...'},
+  {pct:93, msg:'✨ Finalizing...'},
+];
 
-function loadQuestion() {
-  if (qIndex >= shuffled.length) {
-    document.getElementById('qText').textContent = `🎉 Quiz Done! You scored ${score}/${shuffled.length}`;
-    document.getElementById('opts').innerHTML = `
-      <div style="grid-column:1/-1;text-align:center;padding:20px;">
-        <div style="font-size:48px;margin-bottom:8px;">${score>=4?'🏆':score>=2?'👍':'💪'}</div>
-        <div style="font-size:18px;font-weight:800;color:#4ade80;">${score}/${shuffled.length} Correct!</div>
-        <div style="font-size:13px;color:#6b7280;margin-top:4px;">${score>=4?'Excellent! You know SpotEasy well!':score>=2?'Good job! Keep exploring SpotEasy.':'Keep learning about smart parking!'}</div>
-      </div>`;
-    document.getElementById('qCounter').textContent = 'Quiz Complete! 🎓';
+// Shuffle questions, pick 5
+var shuffled = QUESTIONS.slice().sort(function(){return Math.random()-0.5;}).slice(0,5);
+var qIdx = 0, score = 0, answered = false;
+
+function loadQ() {
+  if (qIdx >= shuffled.length) {
+    document.getElementById('qText').textContent = 'Quiz done! You scored ' + score + '/' + shuffled.length;
+    document.getElementById('opts').innerHTML =
+      '<div style="grid-column:1/-1;text-align:center;padding:16px;">' +
+      '<div style="font-size:40px;margin-bottom:8px;">' + (score>=4?'🏆':score>=2?'👍':'💪') + '</div>' +
+      '<div style="font-size:16px;font-weight:900;color:#4ade80;">' + score + '/' + shuffled.length + ' Correct!</div>' +
+      '</div>';
+    document.getElementById('qNum').textContent = 'Quiz Complete! 🎓';
     return;
   }
   answered = false;
-  const q = shuffled[qIndex];
+  var q = shuffled[qIdx];
   document.getElementById('qText').textContent = q.q;
-  document.getElementById('qCounter').textContent = `Question ${qIndex+1}/${shuffled.length}`;
-  document.getElementById('factBox').style.display = 'none';
-  const optsDiv = document.getElementById('opts');
+  document.getElementById('qNum').textContent = 'Question ' + (qIdx+1) + ' / ' + shuffled.length;
+  document.getElementById('factEl').style.display = 'none';
+  var optsDiv = document.getElementById('opts');
   optsDiv.innerHTML = '';
-  q.opts.forEach((opt,i) => {
-    const btn = document.createElement('button');
-    btn.className='opt'; btn.textContent=opt;
-    btn.onclick = () => selectAnswer(i, btn);
+  q.opts.forEach(function(opt, i) {
+    var btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.textContent = opt;
+    btn.onclick = function() { selectAns(i, btn); };
     optsDiv.appendChild(btn);
   });
 }
 
-function selectAnswer(i, btn) {
-  if(answered) return;
+function selectAns(i, btn) {
+  if (answered) return;
   answered = true;
-  const q = shuffled[qIndex];
-  const allBtns = document.querySelectorAll('.opt');
-  allBtns.forEach(b => b.disabled=true);
-  if(i === q.ans){
+  var q = shuffled[qIdx];
+  var allBtns = document.querySelectorAll('.opt');
+  allBtns.forEach(function(b){ b.disabled = true; });
+  if (i === q.ans) {
     btn.classList.add('correct');
     score++;
-    document.getElementById('scoreBox').textContent = `Score: ${score} ✅`;
+    document.getElementById('scoreEl').textContent = 'Score: ' + score + ' ✅';
   } else {
     btn.classList.add('wrong');
-    allBtns[q.ans].classList.add('reveal');
+    allBtns[q.ans].classList.add('show-ans');
   }
-  const fact = document.getElementById('factBox');
+  var fact = document.getElementById('factEl');
   fact.textContent = '💡 ' + q.fact;
   fact.style.display = 'block';
-  setTimeout(() => { qIndex++; loadQuestion(); }, 2800);
+  setTimeout(function(){ qIdx++; loadQ(); }, 2800);
 }
 
-// ── Progress bar & status messages ───────────────────────────────────────────
-const STAGES = [
-  {pct:8,  msg:"🌐 Connecting to server..."},
-  {pct:20, msg:"🗄️ Waking up database..."},
-  {pct:35, msg:"🔧 Loading application modules..."},
-  {pct:50, msg:"🗺️ Fetching parking lot data..."},
-  {pct:65, msg:"🔐 Setting up security..."},
-  {pct:78, msg:"📱 Preparing your experience..."},
-  {pct:88, msg:"🎯 Almost there..."},
-  {pct:95, msg:"✨ Finalizing..."},
-];
-let stageIdx = 0;
-const bar  = document.getElementById('progressBar');
-const pTxt = document.getElementById('progressText');
-
-function advanceProgress() {
-  if(stageIdx < STAGES.length) {
-    const s = STAGES[stageIdx++];
-    bar.style.width = s.pct + '%';
-    pTxt.textContent = s.msg;
+// Progress bar
+var stageIdx = 0;
+function nextStage() {
+  if (stageIdx < STAGES.length) {
+    var s = STAGES[stageIdx++];
+    document.getElementById('progBar').style.width = s.pct + '%';
+    document.getElementById('progTxt').textContent = s.msg;
   }
 }
-advanceProgress();
-const progressTimer = setInterval(advanceProgress, 5000);
+nextStage();
+var progTimer = setInterval(nextStage, 5000);
 
-// ── Tips ticker ──────────────────────────────────────────────────────────────
-let tipIdx = 0;
+// Tips rotation
+var tipIdx = 0;
 function rotateTip() {
-  document.getElementById('tipTicker').innerHTML = TIPS[tipIdx % TIPS.length];
+  document.getElementById('tipEl').innerHTML = TIPS[tipIdx % TIPS.length];
   tipIdx++;
 }
 rotateTip();
 setInterval(rotateTip, 4000);
 
-// ── Poll server until ready ───────────────────────────────────────────────────
-let attempts = 0;
-async function checkReady() {
+// Poll server until ready
+var attempts = 0;
+var redirectTo = '/';
+try {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('next')) redirectTo = params.get('next');
+} catch(e){}
+
+function checkReady() {
   attempts++;
-  try {
-    const r = await fetch('/health', {cache:'no-store', signal:AbortSignal.timeout(5000)});
-    if(r.ok) {
-      clearInterval(progressTimer);
-      bar.style.width = '100%';
-      pTxt.textContent = '✅ SpotEasy is ready! Redirecting...';
-      bar.style.background = 'linear-gradient(90deg,#16a34a,#4ade80)';
-      setTimeout(() => {
-        window.location.href = sessionStorage.getItem('redirectTo') || '/';
-      }, 800);
-      return;
-    }
-  } catch(e) {}
-  // Keep trying — max 3 minutes
-  if(attempts < 90) setTimeout(checkReady, 2000);
-  else {
-    pTxt.textContent = '⚠️ Taking longer than usual... still trying';
-    setTimeout(checkReady, 5000);
-  }
+  fetch('/health', {cache:'no-store'})
+    .then(function(r){ if(r.ok) return r.json(); throw new Error('not ready'); })
+    .then(function() {
+      clearInterval(progTimer);
+      document.getElementById('progBar').style.width = '100%';
+      document.getElementById('progTxt').textContent = '✅ SpotEasy is ready! Redirecting...';
+      setTimeout(function(){ window.location.href = redirectTo; }, 800);
+    })
+    .catch(function() {
+      if (attempts < 60) setTimeout(checkReady, 2000);
+      else window.location.href = redirectTo;
+    });
 }
 
-// Save where user wanted to go
-const dest = window.location.search.includes('next=') ?
-  decodeURIComponent(window.location.search.split('next=')[1]) : '/';
-sessionStorage.setItem('redirectTo', dest);
-
-// Start checking after 2 seconds
 setTimeout(checkReady, 2000);
-
-// Start quiz
-loadQuestion();
+loadQ();
 </script>
 </body>
 </html>
