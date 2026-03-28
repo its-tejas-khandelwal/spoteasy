@@ -1,115 +1,148 @@
 {% extends "base.html" %}
 {% block title %}Admin Dashboard — ParkSmart{% endblock %}
 {% block content %}
-<div class="flex items-center justify-between mb-8">
+<div class="flex flex-wrap items-center justify-between gap-4 mb-8 animate-fade-in">
   <div>
-    <h1 class="text-3xl font-bold">Admin Dashboard</h1>
-    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Platform overview & management</p>
+    <h1 class="text-3xl font-black text-gray-900 dark:text-white">Admin Dashboard</h1>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Platform management & analytics</p>
   </div>
-  <a href="{{ url_for('admin_db_view') }}" class="flex items-center gap-2 bg-slate-800 text-white text-sm px-4 py-2 rounded-xl hover:bg-slate-700">
+  <a href="{{ url_for('admin_db_view') }}" class="inline-flex items-center gap-2 bg-slate-800 dark:bg-slate-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-700 dark:hover:bg-slate-600 transition-all hover:scale-105">
     <i data-lucide="database" class="w-4 h-4"></i> View DB
   </a>
 </div>
 
 <!-- Stats -->
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-  {% for label,val,icon,color in [
-    ('Total Vendors', vendors|length, 'building-2', 'blue'),
-    ('Total Customers', customers|length, 'users', 'emerald'),
-    ('Total Lots', lots|length, 'map-pin', 'purple'),
-    ('Active Lots', lots|selectattr('is_active')|list|length, 'check-circle', 'green'),
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
+  {% for label,val,icon,grad in [
+    ('Total Vendors',   vendors|length,   'building-2',   'from-blue-500 to-indigo-600'),
+    ('Total Customers', customers|length, 'users',        'from-green-500 to-emerald-600'),
+    ('Total Lots',      lots|length,      'map-pin',      'from-purple-500 to-pink-600'),
+    ('Active Lots',     lots|selectattr("is_active")|list|length, 'check-circle-2', 'from-teal-500 to-cyan-600'),
   ] %}
-  <div class="bento bg-white dark:bg-slate-900">
-    <i data-lucide="{{ icon }}" class="w-6 h-6 text-{{ color }}-500 mb-3"></i>
-    <div class="text-2xl font-bold">{{ val }}</div>
-    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ label }}</div>
+  <div class="card group hover:shadow-xl">
+    <div class="flex items-center justify-between mb-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br {{ grad }} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+        <i data-lucide="{{ icon }}" class="w-5 h-5 text-white"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-black text-gray-900 dark:text-white">{{ val }}</div>
+    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ label }}</div>
   </div>
   {% endfor %}
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
   <!-- Vendor Approvals -->
-  <div class="bento bg-white dark:bg-slate-900">
-    <h2 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="user-check" class="w-5 h-5 text-emerald-500"></i> Vendors</h2>
+  <div class="card animate-on-scroll">
+    <h2 class="font-black text-lg mb-5 flex items-center gap-2 text-gray-900 dark:text-white">
+      <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+        <i data-lucide="user-check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+      </div>
+      Vendors
+    </h2>
     {% if vendors %}
     <div class="space-y-3">
       {% for v in vendors %}
-      <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800">
-        <div>
-          <p class="font-medium text-sm">{{ v.name }}</p>
-          <p class="text-xs text-gray-500">{{ v.email }}</p>
+      <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+            {{ v.name[0].upper() }}
+          </div>
+          <div>
+            <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ v.name }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ v.email }}</p>
+          </div>
         </div>
         {% if not v.is_approved %}
         <form method="POST" action="{{ url_for('approve_vendor', uid=v.id) }}">
-          <button class="bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-emerald-700">Approve</button>
+          <button class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all hover:scale-105">Approve ✓</button>
         </form>
         {% else %}
-        <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs px-3 py-1 rounded-full">Approved ✓</span>
+        <span class="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs font-bold px-3 py-1.5 rounded-xl">Approved ✓</span>
         {% endif %}
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-gray-400 text-sm">No vendors registered yet.</p>
+    <p class="text-gray-400 text-sm text-center py-8">No vendors yet.</p>
     {% endif %}
   </div>
 
   <!-- Lot Approvals -->
-  <div class="bento bg-white dark:bg-slate-900">
-    <h2 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="map-pin" class="w-5 h-5 text-blue-500"></i> Parking Lots</h2>
+  <div class="card animate-on-scroll">
+    <h2 class="font-black text-lg mb-5 flex items-center gap-2 text-gray-900 dark:text-white">
+      <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+        <i data-lucide="map-pin" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+      </div>
+      Parking Lots
+    </h2>
     {% if lots %}
     <div class="space-y-3">
       {% for lot in lots %}
-      <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800">
+      <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
         <div>
-          <p class="font-medium text-sm">{{ lot.name }}</p>
-          <p class="text-xs text-gray-500">{{ lot.city }} · {{ lot.total_slots }} slots · Owner: {{ lot.owner.name }}</p>
+          <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ lot.name }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ lot.city }} · {{ lot.total_slots }} slots · {{ lot.owner.name }}</p>
         </div>
         {% if not lot.is_active %}
         <form method="POST" action="{{ url_for('approve_lot', lid=lot.id) }}">
-          <button class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700">Approve</button>
+          <button class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all hover:scale-105">Go Live ✓</button>
         </form>
         {% else %}
-        <span class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs px-3 py-1 rounded-full">Active ✓</span>
+        <span class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold px-3 py-1.5 rounded-xl">Live ✓</span>
         {% endif %}
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-gray-400 text-sm">No lots added yet.</p>
+    <p class="text-gray-400 text-sm text-center py-8">No lots yet.</p>
     {% endif %}
   </div>
 </div>
 
-<!-- Recent Reservations -->
-<div class="bento bg-white dark:bg-slate-900 mt-6">
-  <h2 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-purple-500"></i> Recent Bookings</h2>
+<!-- Recent Bookings -->
+<div class="card animate-on-scroll">
+  <h2 class="font-black text-lg mb-5 flex items-center gap-2 text-gray-900 dark:text-white">
+    <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+      <i data-lucide="list" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+    </div>
+    Recent Bookings
+  </h2>
   {% if reservations %}
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500 text-xs border-b dark:border-slate-700">
-        <th class="pb-2">Customer</th><th class="pb-2">Vehicle</th><th class="pb-2">Lot / Slot</th><th class="pb-2">Entry</th><th class="pb-2">Status</th><th class="pb-2">Amount</th>
-      </tr></thead>
-      <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+  <div class="overflow-x-auto -mx-2">
+    <table class="w-full text-sm min-w-[600px]">
+      <thead>
+        <tr class="text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-dark-700">
+          <th class="pb-3 pl-2 font-semibold">Customer</th>
+          <th class="pb-3 font-semibold">Vehicle</th>
+          <th class="pb-3 font-semibold">Lot / Slot</th>
+          <th class="pb-3 font-semibold">Entry (IST)</th>
+          <th class="pb-3 font-semibold">Status</th>
+          <th class="pb-3 font-semibold">Amount</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50 dark:divide-dark-800">
         {% for r in reservations %}
-        <tr>
-          <td class="py-2">{{ r.customer.name }}</td>
-          <td class="py-2">{{ r.vehicle_no }} ({{ r.vehicle_type }})</td>
-          <td class="py-2">{{ r.slot.lot.name }} / {{ r.slot.label }}</td>
-          <td class="py-2 text-xs">{{ r.entry_time.strftime('%d %b, %I:%M %p') }}</td>
-          <td class="py-2">
-            <span class="px-2 py-0.5 rounded-full text-xs {% if r.status=='active' %}bg-emerald-100 text-emerald-700{% else %}bg-gray-100 text-gray-600{% endif %}">
-              {{ r.status }}
+        <tr class="hover:bg-gray-50 dark:hover:bg-dark-800 transition-colors">
+          <td class="py-3 pl-2 font-semibold text-gray-900 dark:text-white">{{ r.customer.name }}</td>
+          <td class="py-3 text-gray-500 dark:text-gray-400">{{ r.vehicle_no }}<br/><span class="text-xs">{{ '🛵' if r.vehicle_type=='2w' else '🚗' }}</span></td>
+          <td class="py-3 text-gray-600 dark:text-gray-300">{{ r.slot.lot.name[:20] }}<br/><span class="text-xs text-gray-400">{{ r.slot.label }}</span></td>
+          <td class="py-3 text-xs text-gray-500 dark:text-gray-400">{{ r.entry_time.strftime('%d %b %I:%M %p') }}</td>
+          <td class="py-3">
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold
+              {% if r.status=='active' %}bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300
+              {% else %}bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-400{% endif %}">
+              {{ '🟢' if r.status=='active' else '✅' }} {{ r.status }}
             </span>
           </td>
-          <td class="py-2 font-medium">{% if r.amount_paid %}₹{{ r.amount_paid }}{% else %}—{% endif %}</td>
+          <td class="py-3 font-bold text-gray-900 dark:text-white">{% if r.amount_paid %}₹{{ r.amount_paid }}{% else %}—{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   {% else %}
-  <p class="text-gray-400 text-sm">No bookings yet.</p>
+  <p class="text-gray-400 text-sm text-center py-8">No bookings yet.</p>
   {% endif %}
 </div>
 {% endblock %}

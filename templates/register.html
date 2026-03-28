@@ -1,47 +1,65 @@
 {% extends "base.html" %}
 {% block title %}Register — ParkSmart{% endblock %}
 {% block content %}
-<div class="max-w-md mx-auto mt-10">
-  <div class="bento bg-white dark:bg-slate-900 shadow-xl">
+<div class="min-h-[70vh] flex items-center justify-center py-8">
+  <div class="w-full max-w-md animate-scale-in">
     <div class="text-center mb-8">
-      <i data-lucide="user-plus" class="w-12 h-12 text-emerald-600 mx-auto mb-3"></i>
-      <h2 class="text-2xl font-bold">Create Account</h2>
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-xl">
+        <i data-lucide="user-plus" class="w-8 h-8 text-white"></i>
+      </div>
+      <h1 class="text-3xl font-black text-gray-900 dark:text-white">Create account</h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">Join ParkSmart India — it's free</p>
     </div>
-    <form method="POST" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium mb-1">Full Name</label>
-        <input type="text" name="name" required placeholder="Rahul Sharma"
-               class="w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+    <div class="card shadow-2xl">
+      <form method="POST" class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="col-span-2">
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Full Name</label>
+            <input type="text" name="name" required placeholder="Rahul Sharma" class="inp"/>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
+            <input type="email" name="email" required placeholder="you@example.com" class="inp"/>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Phone</label>
+            <input type="tel" name="phone" placeholder="+91 98765..." class="inp"/>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
+            <input type="password" name="password" required minlength="6" placeholder="Min 6 chars" class="inp"/>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Register As</label>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="cursor-pointer">
+                <input type="radio" name="role" value="customer" class="peer hidden" checked/>
+                <div class="peer-checked:border-green-500 peer-checked:bg-green-50 dark:peer-checked:bg-green-950/40 peer-checked:text-green-700 dark:peer-checked:text-green-300 border-2 border-gray-200 dark:border-dark-600 rounded-2xl p-3 text-center transition-all hover:border-green-300">
+                  <div class="text-2xl mb-1">🚗</div>
+                  <div class="font-bold text-sm">Customer</div>
+                  <div class="text-xs text-gray-400 mt-0.5">Driver / Parker</div>
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="role" value="vendor" class="peer hidden"/>
+                <div class="peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-950/40 peer-checked:text-blue-700 dark:peer-checked:text-blue-300 border-2 border-gray-200 dark:border-dark-600 rounded-2xl p-3 text-center transition-all hover:border-blue-300">
+                  <div class="text-2xl mb-1">🅿️</div>
+                  <div class="font-bold text-sm">Vendor</div>
+                  <div class="text-xs text-gray-400 mt-0.5">Lot Owner</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary w-full py-3.5 text-base rounded-2xl mt-2">
+          Create Account →
+        </button>
+      </form>
+      <div class="mt-5 pt-4 border-t border-gray-100 dark:border-dark-700 text-center text-sm text-gray-500 dark:text-gray-400">
+        Already have an account?
+        <a href="{{ url_for('login') }}" class="text-green-600 dark:text-green-400 font-bold hover:underline ml-1">Login</a>
       </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Email Address</label>
-        <input type="email" name="email" required placeholder="you@example.com"
-               class="w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Phone (optional)</label>
-        <input type="tel" name="phone" placeholder="+91 98765 43210"
-               class="w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Password</label>
-        <input type="password" name="password" required minlength="6" placeholder="Min 6 characters"
-               class="w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1">Register As</label>
-        <select name="role" class="w-full border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          <option value="customer">Customer (Driver)</option>
-          <option value="vendor">Parking Owner / Vendor</option>
-        </select>
-      </div>
-      <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition">
-        Create Account →
-      </button>
-    </form>
-    <p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
-      Already have an account? <a href="{{ url_for('login') }}" class="text-emerald-600 font-medium hover:underline">Login</a>
-    </p>
+    </div>
   </div>
 </div>
 {% endblock %}

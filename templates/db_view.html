@@ -1,36 +1,48 @@
 {% extends "base.html" %}
 {% block title %}DB Viewer — ParkSmart{% endblock %}
 {% block content %}
-<div class="mb-6 flex items-center justify-between">
+<div class="flex flex-wrap items-center justify-between gap-4 mb-8 animate-fade-in">
   <div>
-    <h1 class="text-2xl font-bold">Database Viewer</h1>
-    <p class="text-gray-500 text-sm mt-1">Live view of all database records</p>
+    <h1 class="text-2xl font-black text-gray-900 dark:text-white">Database Viewer</h1>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Live database records</p>
   </div>
-  <a href="{{ url_for('admin_dashboard') }}" class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
-    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Admin
-  </a>
+  <div class="flex gap-2 flex-wrap">
+    <a href="{{ url_for('export_csv', table='users') }}" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all hover:scale-105">
+      <i data-lucide="download" class="w-3.5 h-3.5"></i> Users CSV
+    </a>
+    <a href="{{ url_for('export_csv', table='lots') }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all hover:scale-105">
+      <i data-lucide="download" class="w-3.5 h-3.5"></i> Lots CSV
+    </a>
+    <a href="{{ url_for('export_csv', table='reservations') }}" class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all hover:scale-105">
+      <i data-lucide="download" class="w-3.5 h-3.5"></i> Bookings CSV
+    </a>
+    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-800 transition">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+    </a>
+  </div>
 </div>
 
 <!-- Users -->
-<div class="bento bg-white dark:bg-slate-900 mb-6">
-  <h2 class="font-bold text-lg mb-4">👥 Users ({{ users|length }})</h2>
+<div class="card mb-6 animate-on-scroll">
+  <h2 class="font-black text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+    <span class="text-xl">👥</span> Users ({{ users|length }})
+  </h2>
   <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-xs text-gray-500 border-b dark:border-slate-700">
-        <th class="pb-2 pr-4">ID</th><th class="pb-2 pr-4">Name</th><th class="pb-2 pr-4">Email</th>
+    <table class="w-full text-sm min-w-[500px]">
+      <thead><tr class="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-dark-700">
+        <th class="pb-2 pr-4">Name</th><th class="pb-2 pr-4">Email</th>
         <th class="pb-2 pr-4">Role</th><th class="pb-2 pr-4">Approved</th><th class="pb-2">Joined</th>
       </tr></thead>
-      <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+      <tbody class="divide-y divide-gray-50 dark:divide-dark-800">
         {% for u in users %}
-        <tr>
-          <td class="py-2 pr-4 text-gray-400">{{ u.id }}</td>
-          <td class="py-2 pr-4 font-medium">{{ u.name }}</td>
-          <td class="py-2 pr-4 text-gray-500">{{ u.email }}</td>
-          <td class="py-2 pr-4"><span class="px-2 py-0.5 rounded text-xs font-semibold
-            {% if u.role=='admin' %}bg-purple-100 text-purple-700
-            {% elif u.role=='vendor' %}bg-blue-100 text-blue-700
-            {% else %}bg-emerald-100 text-emerald-700{% endif %}">{{ u.role }}</span></td>
-          <td class="py-2 pr-4">{% if u.is_approved %}✅{% else %}⏳{% endif %}</td>
+        <tr class="hover:bg-gray-50 dark:hover:bg-dark-800 transition-colors">
+          <td class="py-2 pr-4 font-semibold text-gray-900 dark:text-white">{{ u.name }}</td>
+          <td class="py-2 pr-4 text-gray-500 dark:text-gray-400 text-xs">{{ u.email }}</td>
+          <td class="py-2 pr-4"><span class="px-2 py-0.5 rounded-lg text-xs font-bold
+            {% if u.role=='admin' %}bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300
+            {% elif u.role=='vendor' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
+            {% else %}bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300{% endif %}">{{ u.role }}</span></td>
+          <td class="py-2 pr-4">{% if u.is_approved %}<span class="text-green-500">✅</span>{% else %}<span class="text-yellow-500">⏳</span>{% endif %}</td>
           <td class="py-2 text-xs text-gray-400">{{ u.created_at.strftime('%d %b %Y') }}</td>
         </tr>
         {% endfor %}
@@ -40,23 +52,24 @@
 </div>
 
 <!-- Lots -->
-<div class="bento bg-white dark:bg-slate-900 mb-6">
-  <h2 class="font-bold text-lg mb-4">🅿️ Parking Lots ({{ lots|length }})</h2>
+<div class="card mb-6 animate-on-scroll">
+  <h2 class="font-black text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+    <span class="text-xl">🅿️</span> Parking Lots ({{ lots|length }})
+  </h2>
   <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-xs text-gray-500 border-b dark:border-slate-700">
-        <th class="pb-2 pr-4">ID</th><th class="pb-2 pr-4">Name</th><th class="pb-2 pr-4">City</th>
-        <th class="pb-2 pr-4">Slots</th><th class="pb-2 pr-4">Rates (2W/4W)</th><th class="pb-2">Active</th>
+    <table class="w-full text-sm min-w-[500px]">
+      <thead><tr class="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-dark-700">
+        <th class="pb-2 pr-4">Name</th><th class="pb-2 pr-4">City</th>
+        <th class="pb-2 pr-4">Slots</th><th class="pb-2 pr-4">Rates</th><th class="pb-2">Status</th>
       </tr></thead>
-      <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+      <tbody class="divide-y divide-gray-50 dark:divide-dark-800">
         {% for lot in lots %}
-        <tr>
-          <td class="py-2 pr-4 text-gray-400">{{ lot.id }}</td>
-          <td class="py-2 pr-4 font-medium">{{ lot.name }}</td>
-          <td class="py-2 pr-4 text-gray-500">{{ lot.city }}</td>
-          <td class="py-2 pr-4">{{ lot.total_slots }}</td>
-          <td class="py-2 pr-4 text-gray-500">₹{{ lot.rate_2w }} / ₹{{ lot.rate_4w }}</td>
-          <td class="py-2">{% if lot.is_active %}✅{% else %}⏳ Pending{% endif %}</td>
+        <tr class="hover:bg-gray-50 dark:hover:bg-dark-800 transition-colors">
+          <td class="py-2 pr-4 font-semibold text-gray-900 dark:text-white">{{ lot.name }}</td>
+          <td class="py-2 pr-4 text-gray-500 dark:text-gray-400">{{ lot.city }}</td>
+          <td class="py-2 pr-4 text-gray-600 dark:text-gray-300">{{ lot.total_slots }}</td>
+          <td class="py-2 pr-4 text-xs text-gray-500">🛵₹{{ lot.rate_2w }} · 🚗₹{{ lot.rate_4w }}</td>
+          <td class="py-2">{% if lot.is_active %}<span class="text-green-500 font-bold text-xs">✅ Live</span>{% else %}<span class="text-yellow-500 font-bold text-xs">⏳ Pending</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -65,26 +78,28 @@
 </div>
 
 <!-- Reservations -->
-<div class="bento bg-white dark:bg-slate-900">
-  <h2 class="font-bold text-lg mb-4">📋 Reservations ({{ reservations|length }})</h2>
+<div class="card animate-on-scroll">
+  <h2 class="font-black text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+    <span class="text-xl">📋</span> Reservations ({{ reservations|length }})
+  </h2>
   <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-xs text-gray-500 border-b dark:border-slate-700">
-        <th class="pb-2 pr-4">ID</th><th class="pb-2 pr-4">Customer</th><th class="pb-2 pr-4">Lot/Slot</th>
-        <th class="pb-2 pr-4">Vehicle</th><th class="pb-2 pr-4">Entry</th><th class="pb-2 pr-4">Status</th><th class="pb-2">Amount</th>
+    <table class="w-full text-sm min-w-[600px]">
+      <thead><tr class="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-dark-700">
+        <th class="pb-2 pr-4">Customer</th><th class="pb-2 pr-4">Lot/Slot</th>
+        <th class="pb-2 pr-4">Vehicle</th><th class="pb-2 pr-4">Entry</th>
+        <th class="pb-2 pr-4">Status</th><th class="pb-2">Amount</th>
       </tr></thead>
-      <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+      <tbody class="divide-y divide-gray-50 dark:divide-dark-800">
         {% for r in reservations %}
-        <tr>
-          <td class="py-2 pr-4 text-gray-400">{{ r.id }}</td>
-          <td class="py-2 pr-4 font-medium">{{ r.customer.name }}</td>
-          <td class="py-2 pr-4 text-gray-500">{{ r.slot.lot.name }} / {{ r.slot.label }}</td>
-          <td class="py-2 pr-4">{{ r.vehicle_no }}</td>
-          <td class="py-2 pr-4 text-xs">{{ r.entry_time.strftime('%d %b %Y %H:%M') }}</td>
-          <td class="py-2 pr-4"><span class="px-2 py-0.5 rounded text-xs font-semibold
-            {% if r.status=='active' %}bg-emerald-100 text-emerald-700{% else %}bg-gray-100 text-gray-600{% endif %}">
-            {{ r.status }}</span></td>
-          <td class="py-2 font-medium">{% if r.amount_paid %}₹{{ r.amount_paid }}{% else %}—{% endif %}</td>
+        <tr class="hover:bg-gray-50 dark:hover:bg-dark-800 transition-colors">
+          <td class="py-2 pr-4 font-semibold text-gray-900 dark:text-white">{{ r.customer.name }}</td>
+          <td class="py-2 pr-4 text-xs text-gray-500 dark:text-gray-400">{{ r.slot.lot.name[:20] }}<br/>{{ r.slot.label }}</td>
+          <td class="py-2 pr-4 text-gray-600 dark:text-gray-300">{{ r.vehicle_no }}</td>
+          <td class="py-2 pr-4 text-xs text-gray-400">{{ r.entry_time.strftime('%d %b %H:%M') }}</td>
+          <td class="py-2 pr-4"><span class="px-2 py-0.5 rounded-lg text-xs font-bold
+            {% if r.status=='active' %}bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300
+            {% else %}bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-400{% endif %}">{{ r.status }}</span></td>
+          <td class="py-2 font-bold text-gray-900 dark:text-white">{% if r.amount_paid %}₹{{ r.amount_paid }}{% else %}—{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>

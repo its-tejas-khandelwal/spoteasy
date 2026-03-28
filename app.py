@@ -1,8 +1,28 @@
-import os, base64, io
+import os, base64, io, threading, time
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+
+# ── Self-Ping Keep-Alive (prevents Render free tier from sleeping) ─────────────
+def _keep_alive():
+    """Pings own /health endpoint every 13 minutes so Render never sleeps."""
+    time.sleep(60)  # wait 1 min after startup before first ping
+    app_url = os.environ.get('RENDER_EXTERNAL_URL', '')
+    if not app_url:
+        print("[KeepAlive] No RENDER_EXTERNAL_URL set — skipping self-ping")
+        return
+    import requests as _req
+    while True:
+        try:
+            r = _req.get(f"{app_url}/health", timeout=10)
+            print(f"[KeepAlive] Pinged {app_url}/health → {r.status_code}")
+        except Exception as e:
+            print(f"[KeepAlive] Ping failed: {e}")
+        time.sleep(13 * 60)  # 13 minutes
+
+_ping_thread = threading.Thread(target=_keep_alive, daemon=True)
+_ping_thread.start()
 from dotenv import load_dotenv
 from models import db, User, ParkingLot, ParkingSlot, Reservation
 
@@ -450,3 +470,35 @@ def server_error(e): return render_template('500.html'), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+# ── Data Export (CSV download) ─────────────────────────────────────────────────
+import csv, io as _io
+from flask import make_response
+
+@app.route('/admin/export/<string:table>')
+@login_required
+def export_csv(table):
+    if current_user.role != 'admin':
+        return redirect(url_for('index'))
+    output = _io.StringIO()
+    writer = csv.writer(output)
+    if table == 'users':
+        writer.writerow(['ID','Name','Email','Role','Phone','Approved','Created'])
+        for u in User.query.all():
+            writer.writerow([u.id,u.name,u.email,u.role,u.phone or '',u.is_approved,u.created_at])
+    elif table == 'lots':
+        writer.writerow(['ID','Name','City','Address','Total Slots','Rate 2W','Rate 4W','Active','Owner'])
+        for l in ParkingLot.query.all():
+            writer.writerow([l.id,l.name,l.city,l.address,l.total_slots,l.rate_2w,l.rate_4w,l.is_active,l.owner.email])
+    elif table == 'reservations':
+        writer.writerow(['ID','Customer','Vehicle No','Type','Lot','Slot','Entry','Exit','Amount','Status'])
+        for r in Reservation.query.order_by(Reservation.created_at.desc()).all():
+            writer.writerow([r.id,r.customer.name,r.vehicle_no,r.vehicle_type,
+                             r.slot.lot.name,r.slot.label,r.entry_time,
+                             r.exit_time or '',r.amount_paid or 0,r.status])
+    else:
+        return "Unknown table", 404
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename=parksmart_{table}.csv'
+    return response

@@ -6,80 +6,195 @@
 <title>{% block title %}ParkSmart India{% endblock %}</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-  tailwind.config = {
-    darkMode: 'class',
-    theme: {
-      extend: {
-        colors: {
-          emerald: { 400:'#34d399', 500:'#10b981', 600:'#059669', 700:'#047857' },
-          navy:    { 900:'#0f172a', 800:'#1e293b', 700:'#334155' }
-        }
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        brand: { 50:'#f0fdf4',100:'#dcfce7',400:'#4ade80',500:'#22c55e',600:'#16a34a',700:'#15803d' },
+        dark:  { 800:'#1a1f2e', 900:'#0f1117', 950:'#080b11' }
+      },
+      keyframes: {
+        'fade-up':   { '0%':{ opacity:'0', transform:'translateY(16px)' }, '100%':{ opacity:'1', transform:'translateY(0)' } },
+        'fade-in':   { '0%':{ opacity:'0' }, '100%':{ opacity:'1' } },
+        'scale-in':  { '0%':{ transform:'scale(0.95)', opacity:'0' }, '100%':{ transform:'scale(1)', opacity:'1' } },
+        'slide-right':{ '0%':{ transform:'translateX(-20px)', opacity:'0' }, '100%':{ transform:'translateX(0)', opacity:'1' } },
+        'glow-pulse':{ '0%,100%':{ boxShadow:'0 0 0 0 rgba(34,197,94,0.4)' }, '50%':{ boxShadow:'0 0 0 10px rgba(34,197,94,0)' } }
+      },
+      animation: {
+        'fade-up':    'fade-up 0.4s ease both',
+        'fade-in':    'fade-in 0.3s ease both',
+        'scale-in':   'scale-in 0.3s ease both',
+        'slide-right':'slide-right 0.4s ease both',
+        'glow-pulse': 'glow-pulse 2s infinite',
       }
     }
   }
+}
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <style>
-  *{font-family:'Inter',sans-serif;}
-  .glass{background:rgba(255,255,255,0.08);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.15);}
-  .glass-light{background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(0,0,0,0.08);}
-  .dark .glass-light{background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);}
-  .bento{border-radius:1.25rem;padding:1.5rem;transition:box-shadow 0.2s;}
-  .slot-available{background:rgba(16,185,129,0.15);border:2px solid #10b981;color:#065f46;}
-  .slot-occupied{background:rgba(239,68,68,0.12);border:2px solid #ef4444;color:#991b1b;}
-  .dark .slot-available{background:rgba(52,211,153,0.15);border-color:#34d399;color:#6ee7b7;}
-  .dark .slot-occupied{background:rgba(239,68,68,0.2);border-color:#f87171;color:#fca5a5;}
-  @keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.5);}50%{box-shadow:0 0 0 8px rgba(16,185,129,0);}}
-  .pulse-available{animation:pulse-green 2s infinite;}
-  @media print{
-    nav,footer,.no-print{display:none!important;}
-    body{background:white!important;color:black!important;}
-    .print-only{display:block!important;}
-    #passCard{box-shadow:none!important;max-width:400px;margin:0 auto;}
-  }
+*, *::before, *::after { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #22c55e44; border-radius: 99px; }
+
+/* ── Cards ── */
+.card {
+  background: white;
+  border-radius: 1.25rem;
+  border: 1px solid #f0f0f0;
+  padding: 1.5rem;
+  transition: all 0.25s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+.dark .card { background: #1a1f2e; border-color: #2d3548; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.dark .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+
+/* ── Navbar ── */
+.navbar {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.dark .navbar {
+  background: rgba(10,13,20,0.92);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ── Slots ── */
+.slot-available {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  border: 2px solid #22c55e;
+  color: #15803d;
+}
+.slot-occupied {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border: 2px solid #ef4444;
+  color: #991b1b;
+}
+.dark .slot-available { background: linear-gradient(135deg,rgba(34,197,94,0.2),rgba(34,197,94,0.1)); border-color:#4ade80; color:#86efac; }
+.dark .slot-occupied  { background: linear-gradient(135deg,rgba(239,68,68,0.2),rgba(239,68,68,0.1));  border-color:#f87171; color:#fca5a5; }
+
+/* ── Buttons ── */
+.btn-primary {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white; font-weight: 700;
+  border-radius: 0.875rem; padding: 0.75rem 1.5rem;
+  transition: all 0.2s; border: none; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.35);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34,197,94,0.45); }
+.btn-primary:active { transform: translateY(0); }
+
+/* ── Input ── */
+.inp {
+  width: 100%; border: 2px solid #e5e7eb;
+  background: white; border-radius: 0.75rem;
+  padding: 0.75rem 1rem; font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+}
+.inp:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+.dark .inp { background: #1a1f2e; border-color: #2d3548; color: #f1f5f9; }
+.dark .inp:focus { border-color: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,0.15); }
+
+/* ── Print ── */
+@media print {
+  nav, footer, .no-print { display: none !important; }
+  body { background: white !important; color: black !important; }
+  #passCard { max-width: 420px; margin: 0 auto; border-radius: 1rem; overflow: hidden; }
+}
+
+/* ── Stagger animation for children ── */
+.stagger > * { animation: fade-up 0.4s ease both; }
+.stagger > *:nth-child(1){ animation-delay:0.05s }
+.stagger > *:nth-child(2){ animation-delay:0.10s }
+.stagger > *:nth-child(3){ animation-delay:0.15s }
+.stagger > *:nth-child(4){ animation-delay:0.20s }
+.stagger > *:nth-child(5){ animation-delay:0.25s }
+.stagger > *:nth-child(6){ animation-delay:0.30s }
 </style>
 <script>
-  (function(){
-    const t = localStorage.getItem('ps_theme') ||
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    if(t === 'dark') document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  })();
+(function(){
+  const t = localStorage.getItem('ps_theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.classList.toggle('dark', t === 'dark');
+})();
 </script>
 </head>
-<body class="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
 
-<!-- Navbar -->
-<nav class="sticky top-0 z-50 glass-light shadow-sm">
-  <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
-    <a href="/" class="flex items-center gap-2 font-bold text-xl text-emerald-600 dark:text-emerald-400">
-      <i data-lucide="parking-circle" class="w-7 h-7"></i>
-      <span>ParkSmart <span class="text-gray-400 dark:text-gray-500 font-normal text-sm">India</span></span>
+<body class="min-h-screen bg-gray-50 dark:bg-dark-950 text-gray-900 dark:text-slate-100 transition-colors duration-300">
+
+<!-- ── Navbar ────────────────────────────────────────────────────────────── -->
+<nav class="navbar sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-2.5 group">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+        <i data-lucide="parking-circle" class="w-5 h-5 text-white"></i>
+      </div>
+      <div class="flex flex-col leading-none">
+        <span class="font-black text-lg text-gray-900 dark:text-white tracking-tight">ParkSmart</span>
+        <span class="text-xs text-green-600 dark:text-green-400 font-semibold -mt-0.5">India 🇮🇳</span>
+      </div>
     </a>
-    <div class="flex items-center gap-3">
+
+    <!-- Nav Links -->
+    <div class="flex items-center gap-1 sm:gap-2">
       {% if current_user.is_authenticated %}
-        <span class="hidden sm:inline text-sm text-gray-500 dark:text-gray-400 font-medium">
-          {{ current_user.name }}
-        </span>
+        <!-- User badge -->
+        <div class="hidden sm:flex items-center gap-2 bg-gray-100 dark:bg-dark-800 px-3 py-1.5 rounded-xl mr-1">
+          <div class="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white text-xs font-bold">
+            {{ current_user.name[0].upper() }}
+          </div>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ current_user.name.split()[0] }}</span>
+          <span class="text-xs px-1.5 py-0.5 rounded-md font-semibold
+            {% if current_user.role=='admin' %}bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300
+            {% elif current_user.role=='vendor' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
+            {% else %}bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300{% endif %}">
+            {{ current_user.role }}
+          </span>
+        </div>
+
         {% if current_user.role == 'customer' %}
-          <a href="{{ url_for('customer_dashboard') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400">My Bookings</a>
-          <a href="{{ url_for('lots_list') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400">Find Parking</a>
+          <a href="{{ url_for('customer_dashboard') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+          </a>
+          <a href="{{ url_for('lots_list') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> Find Parking
+          </a>
         {% elif current_user.role == 'vendor' %}
-          <a href="{{ url_for('vendor_dashboard') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400">Dashboard</a>
+          <a href="{{ url_for('vendor_dashboard') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+          </a>
+          <a href="{{ url_for('add_lot') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Lot
+          </a>
         {% elif current_user.role == 'admin' %}
-          <a href="{{ url_for('admin_dashboard') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400">Admin Panel</a>
+          <a href="{{ url_for('admin_dashboard') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="shield-check" class="w-4 h-4"></i> Admin Panel
+          </a>
+          <a href="{{ url_for('admin_db_view') }}" class="nav-link hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 hover:text-green-600 dark:hover:text-green-400 transition-all">
+            <i data-lucide="database" class="w-4 h-4"></i> DB
+          </a>
         {% endif %}
-        <a href="{{ url_for('logout') }}" class="text-sm font-medium text-red-500 hover:text-red-700">Logout</a>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Logout</span>
+        </a>
       {% else %}
-        <a href="{{ url_for('login') }}" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-emerald-600">Login</a>
-        <a href="{{ url_for('register') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">Register</a>
+        <a href="{{ url_for('login') }}" class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800 transition-all">Login</a>
+        <a href="{{ url_for('register') }}" class="btn-primary text-sm px-4 py-2 rounded-xl">Register</a>
       {% endif %}
+
       <!-- Theme Toggle -->
-      <button onclick="toggleTheme()" id="themeBtn"
-        class="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition"
-        aria-label="Toggle dark/light mode">
+      <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-dark-800 hover:bg-gray-200 dark:hover:bg-dark-700 transition-all hover:scale-110 active:scale-95" aria-label="Toggle theme">
         <i data-lucide="sun" class="w-4 h-4 text-amber-500 dark:hidden"></i>
         <i data-lucide="moon" class="w-4 h-4 text-indigo-400 hidden dark:block"></i>
       </button>
@@ -87,17 +202,17 @@
   </div>
 </nav>
 
-<!-- Flash Messages -->
+<!-- ── Flash Messages ─────────────────────────────────────────────────────── -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-  <div class="max-w-7xl mx-auto px-4 mt-4 space-y-2 no-print">
+  <div class="max-w-7xl mx-auto px-4 mt-4 space-y-2 no-print animate-fade-in">
     {% for category, message in messages %}
-    <div class="flex items-center gap-3 p-3 rounded-xl text-sm font-medium
-      {% if category=='danger' %}bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800
-      {% elif category=='success' %}bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800
-      {% elif category=='warning' %}bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800
-      {% else %}bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800{% endif %}">
-      <i data-lucide="{% if category=='danger' %}alert-circle{% elif category=='success' %}check-circle{% else %}info{% endif %}" class="w-4 h-4 shrink-0"></i>
+    <div class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold
+      {% if category=='danger'  %}bg-red-50    dark:bg-red-950/50    text-red-700    dark:text-red-300    border border-red-200    dark:border-red-800
+      {% elif category=='success'%}bg-green-50  dark:bg-green-950/50  text-green-700  dark:text-green-300  border border-green-200  dark:border-green-800
+      {% elif category=='warning'%}bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800
+      {% else                   %}bg-blue-50   dark:bg-blue-950/50   text-blue-700   dark:text-blue-300   border border-blue-200   dark:border-blue-800{% endif %}">
+      <i data-lucide="{% if category=='danger' %}alert-circle{% elif category=='success' %}check-circle-2{% else %}info{% endif %}" class="w-4 h-4 shrink-0"></i>
       {{ message }}
     </div>
     {% endfor %}
@@ -105,23 +220,49 @@
   {% endif %}
 {% endwith %}
 
-<main class="max-w-7xl mx-auto px-4 py-8">
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
   {% block content %}{% endblock %}
 </main>
 
-<footer class="no-print text-center text-xs text-gray-400 dark:text-gray-600 pb-8 mt-12 border-t border-gray-100 dark:border-slate-800 pt-6">
-  🅿️ ParkSmart India &copy; 2025 &nbsp;·&nbsp; Made with ❤️ for India &nbsp;·&nbsp;
-  <span class="text-emerald-500">{{ now_ist.strftime('%I:%M %p IST') }}</span>
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer class="no-print border-t border-gray-100 dark:border-dark-800 mt-16 py-6">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-400 dark:text-gray-600">
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+        <i data-lucide="parking-circle" class="w-3 h-3 text-white"></i>
+      </div>
+      <span class="font-semibold text-gray-500 dark:text-gray-500">ParkSmart India</span>
+      <span>&copy; 2025</span>
+    </div>
+    <span class="text-green-500 font-mono text-xs">{{ now_ist.strftime('%d %b %Y · %I:%M %p IST') }}</span>
+  </div>
 </footer>
 
 <script>
+lucide.createIcons();
+function toggleTheme(){
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('ps_theme', isDark ? 'dark' : 'light');
   lucide.createIcons();
-  function toggleTheme(){
-    const html = document.documentElement;
-    const isDark = html.classList.toggle('dark');
-    localStorage.setItem('ps_theme', isDark ? 'dark' : 'light');
-    lucide.createIcons();
-  }
+}
+// Intersection observer for scroll animations
+document.addEventListener('DOMContentLoaded', () => {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'none';
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.animate-on-scroll').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    obs.observe(el);
+  });
+});
 </script>
 {% block scripts %}{% endblock %}
 </body>
