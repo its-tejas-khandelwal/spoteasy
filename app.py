@@ -144,8 +144,8 @@ def inject_helpers():
 
 def send_email(to_email, subject, html_body):
     try:
-        smtp_user = os.environ.get('SMTP_FROM', '')
-        smtp_pass = os.environ.get('SMTP_KEY', '')
+        smtp_user = os.environ.get('EMAIL_FROM', '')
+        smtp_pass = os.environ.get('EMAIL_KEY', '')
         if not smtp_user or not smtp_pass:
             print(f"[Email] No credentials - skipping")
             return False
