@@ -1,1 +1,1 @@
-self.addEventListener('install',function(){self.skipWaiting();}); 
+self.addEventListener("install",function(){self.skipWaiting();});
