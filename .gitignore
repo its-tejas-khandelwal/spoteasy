@@ -41,3 +41,4 @@ logs/
 
 # Instance folder (Flask)
 instance/
+static/firebase-sw.js 
