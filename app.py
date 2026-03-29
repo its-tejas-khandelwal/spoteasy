@@ -178,8 +178,8 @@ def inject_helpers():
 def send_email(to_email, subject, html_body):
     """Send email via SMTP. Set MAIL_USER and MAIL_PASS in Railway env vars."""
     try:
-        gmail_user = os.environ.get('MAIL_USER', '')
-        gmail_pass = os.environ.get('MAIL_PASS', '')
+        gmail_user = os.environ.get('SMTP_FROM', '')
+        gmail_pass = os.environ.get('SMTP_KEY', '')
         if not gmail_user or not gmail_pass:
             print(f"[Email] No credentials set — skipping email to {to_email}")
             return False
