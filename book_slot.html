@@ -1,128 +1,83 @@
 {% extends "base.html" %}
-{% block title %}Book Slot — {{ lot.name }}{% endblock %}
+{% block title %}SpotEasy — Smart Parking India{% endblock %}
 {% block content %}
-<div class="container" style="padding-top:36px;padding-bottom:60px;max-width:800px;">
 
-  <div style="margin-bottom:24px;">
-    <a href="{{ url_for('lots_list') }}" style="font-size:13px;color:var(--muted);">← Back to Lots</a>
-    <h1 class="section-title" style="margin-top:8px;">Book a Slot at {{ lot.name }}</h1>
-    <p style="font-size:14px;color:var(--muted);margin-top:4px;">
-      📍 {{ lot.address }}, {{ lot.city }} &nbsp;·&nbsp;
-      🛵 ₹{{ lot.rate_2w }}/hr &nbsp;·&nbsp; 🚗 ₹{{ lot.rate_4w }}/hr &nbsp;·&nbsp;
-      <span style="color:var(--accent);">🎁 First 15 min FREE!</span>
-    </p>
+<!-- Hero -->
+<div class="animate-fade-in text-center py-8 sm:py-12">
+  <div class="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs font-bold px-4 py-2 rounded-full mb-6 border border-green-200 dark:border-green-800">
+    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse inline-block"></span>
+    Live — Smart Parking Platform for India
   </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
-
-    <!-- Slot selection grid -->
-    <div class="ps-card" style="padding:20px;">
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);margin-bottom:6px;">Select a Slot</div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Click a 🟢 green slot to select it</p>
-
-      <!-- Filter -->
-      <div style="display:flex;gap:8px;margin-bottom:14px;">
-        <button onclick="filterType('all',this)" style="padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;" id="f-all">All</button>
-        <button onclick="filterType('2W',this)" style="padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;" id="f-2W">🛵 2W</button>
-        <button onclick="filterType('4W',this)" style="padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;" id="f-4W">🚗 4W</button>
-      </div>
-
-      <!-- Slot grid -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px;max-height:300px;overflow-y:auto;padding-right:4px;">
-        {% for slot in lot.slots %}
-        <div class="slot-card slot-{{slot.status.value}}" data-type="{{slot.slot_type.value}}"
-             id="s-{{slot.id}}"
-             {% if slot.status.value == 'available' %}
-             onclick="selectSlot('{{slot.id}}','{{slot.slot_number}}','{{slot.slot_type.value}}')"
-             {% endif %}
-             title="{{ slot.slot_number }} — {{ slot.slot_type.value }} — {{ slot.status.value }}">
-          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:9px;
-            color:{{'#10b981' if slot.status.value=='available' else '#ef4444' if slot.status.value=='occupied' else '#f59e0b' if slot.status.value=='reserved' else '#6b7280'}};">
-            {{ slot.slot_number }}
-          </div>
-          <div style="width:5px;height:5px;border-radius:50%;margin-top:3px;
-            background:{{'#10b981' if slot.status.value=='available' else '#ef4444' if slot.status.value=='occupied' else '#f59e0b' if slot.status.value=='reserved' else '#6b7280'}};"></div>
-          <div style="font-size:8px;color:var(--muted);margin-top:1px;">{{slot.slot_type.value}}</div>
-        </div>
-        {% endfor %}
-      </div>
-      <div style="display:flex;gap:12px;margin-top:12px;font-size:11px;color:var(--muted);">
-        <span>🟢 Available</span><span>🔴 Occupied</span><span>🟡 Reserved</span>
-      </div>
-    </div>
-
-    <!-- Booking form -->
-    <div class="ps-card" style="padding:24px;">
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);margin-bottom:16px;">Booking Details</div>
-
-      <form method="POST" action="{{ url_for('book_slot', lot_id=lot.id) }}" id="bookForm">
-        <input type="hidden" name="slot_id" id="selectedSlotId" required/>
-        <input type="hidden" name="vehicle_type" id="selectedVehicleType" value="4W"/>
-
-        <!-- Selected slot display -->
-        <div style="padding:14px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:16px;min-height:60px;display:flex;align-items:center;justify-content:center;" id="selectedDisplay">
-          <div style="text-align:center;color:var(--muted);font-size:13px;">👆 Click a green slot above</div>
-        </div>
-
-        <div class="ps-form-group">
-          <label class="ps-label">Vehicle Number</label>
-          <input name="vehicle_number" type="text" class="ps-input"
-                 placeholder="UP32 AX 4521" required
-                 style="text-transform:uppercase;"
-                 oninput="this.value=this.value.toUpperCase()"/>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Format: UP32 AX 4521</div>
-        </div>
-
-        <!-- Billing info -->
-        <div style="padding:14px;border-radius:12px;background:var(--glow);margin-bottom:16px;">
-          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">💡 Billing Rules</div>
-          <div style="font-size:12px;color:var(--muted);line-height:1.7;">
-            ✅ First <strong style="color:var(--accent);">15 minutes FREE</strong><br/>
-            🛵 2-Wheeler: ₹{{ lot.rate_2w }}/hr<br/>
-            🚗 4-Wheeler: ₹{{ lot.rate_4w }}/hr<br/>
-            📊 GST 18% added on total
-          </div>
-        </div>
-
-        <button type="submit" class="btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:14px;" id="bookBtn" disabled>
-          ⚡ Confirm Booking
-        </button>
-      </form>
-    </div>
+  <h1 class="text-4xl sm:text-6xl font-black text-gray-900 dark:text-white mb-4 leading-tight">
+    Park Smart.<br/>
+    <span class="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-400">Save Time.</span>
+  </h1>
+  <p class="text-gray-500 dark:text-gray-400 text-lg max-w-xl mx-auto mb-8">
+    Find, book and manage parking spots across Indian cities. Digital pass, UPI payments, live slot tracking.
+  </p>
+  <div class="flex flex-wrap gap-3 justify-center">
+    <a href="{{ url_for('lots_list') }}" class="btn-primary px-8 py-3.5 rounded-2xl inline-flex items-center gap-2 text-base">
+      <i data-lucide="map-pin" class="w-5 h-5"></i> Find Parking
+    </a>
+    <a href="{{ url_for('register') }}" class="px-8 py-3.5 rounded-2xl inline-flex items-center gap-2 text-base font-bold border-2 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:border-green-500 hover:text-green-600 transition-all">
+      Register Free →
+    </a>
   </div>
 </div>
-{% endblock %}
-{% block scripts %}
-<script>
-function selectSlot(id, num, type) {
-  document.getElementById('selectedSlotId').value = id;
-  document.getElementById('selectedVehicleType').value = type;
 
-  const color = '#10b981';
-  const icon  = type === '2W' ? '🛵' : '🚗';
-  document.getElementById('selectedDisplay').innerHTML = `
-    <div style="text-align:center;">
-      <div style="font-size:28px;margin-bottom:4px;">${icon}</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:var(--accent);">${num}</div>
-      <div style="font-size:12px;color:var(--muted);">${type} Slot — Selected ✅</div>
-    </div>`;
+<!-- Role Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-12 mb-12 stagger">
 
-  document.querySelectorAll('.slot-card.slot-available').forEach(el => {
-    el.style.border = '1.5px solid rgba(16,185,129,.4)';
-  });
-  const sel = document.getElementById('s-' + id);
-  if(sel) sel.style.border = '2px solid var(--accent)';
-  document.getElementById('bookBtn').removeAttribute('disabled');
-}
+  <div class="card animate-on-scroll" style="position:relative;">
+    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-4 shadow-lg">
+      <i data-lucide="user" class="w-6 h-6 text-white"></i>
+    </div>
+    <h3 class="font-black text-xl mb-2 text-gray-900 dark:text-white">Customer</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">Find, book and manage parking. Get digital pass with QR code.</p>
+    <a href="{{ url_for('register') }}" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#16a34a,#22c55e);color:white;font-weight:700;font-size:14px;padding:10px 20px;border-radius:12px;text-decoration:none;position:relative;z-index:10;">
+      Start Parking →
+    </a>
+  </div>
 
-function filterType(type, btn) {
-  document.querySelectorAll('#f-all,#f-2W,#f-4W').forEach(b => {
-    b.style.background = 'transparent'; b.style.color = 'var(--muted)';
-  });
-  btn.style.background = 'var(--accent)'; btn.style.color = 'white';
-  document.querySelectorAll('[data-type]').forEach(el => {
-    el.style.display = (type==='all' || el.dataset.type===type) ? '' : 'none';
-  });
-}
-</script>
+  <div class="card animate-on-scroll" style="position:relative;">
+    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg">
+      <i data-lucide="building-2" class="w-6 h-6 text-white"></i>
+    </div>
+    <h3 class="font-black text-xl mb-2 text-gray-900 dark:text-white">Parking Owner</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">List your lot, manage live slot grid, track occupancy.</p>
+    <a href="{{ url_for('register') }}" style="display:inline-flex;align-items:center;gap:8px;background:#2563eb;color:white;font-weight:700;font-size:14px;padding:10px 20px;border-radius:12px;text-decoration:none;position:relative;z-index:10;">
+      Register Lot →
+    </a>
+  </div>
+
+  <div class="card animate-on-scroll" style="position:relative;">
+    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-4 shadow-lg">
+      <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+    </div>
+    <h3 class="font-black text-xl mb-2 text-gray-900 dark:text-white">Super Admin</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">Approve vendors, manage platform, view all data.</p>
+    <a href="{{ url_for('login') }}" style="display:inline-flex;align-items:center;gap:8px;background:#9333ea;color:white;font-weight:700;font-size:14px;padding:10px 20px;border-radius:12px;text-decoration:none;position:relative;z-index:10;">
+      Admin Login →
+    </a>
+  </div>
+</div>
+
+<!-- Features -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-on-scroll">
+  {% for icon, title, desc in [
+    ('qr-code','Digital QR Pass','Entry & exit with QR'),
+    ('smartphone','PWA Mobile App','Install on any device'),
+    ('shield','UPI & Cash','Secure payments'),
+    ('clock','15 Min Free','Grace period always'),
+  ] %}
+  <div class="card text-center p-4">
+    <div class="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-2xl flex items-center justify-center mx-auto mb-3">
+      <i data-lucide="{{ icon }}" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+    </div>
+    <p class="font-bold text-sm text-gray-900 dark:text-white">{{ title }}</p>
+    <p class="text-xs text-gray-500 mt-1">{{ desc }}</p>
+  </div>
+  {% endfor %}
+</div>
+
 {% endblock %}

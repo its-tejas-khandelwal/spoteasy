@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Offline — SpotEasy{% endblock %}
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center">
+  <div class="card text-center max-w-sm mx-auto animate-scale-in">
+    <div class="text-6xl mb-4">📡</div>
+    <h1 class="text-2xl font-black text-gray-900 dark:text-white mb-2">You're Offline</h1>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">
+      No internet connection detected.<br/>Please check your network and try again.
+    </p>
+    <button onclick="location.reload()" class="btn-primary w-full py-3 rounded-xl">
+      🔄 Try Again
+    </button>
+  </div>
+</div>
+{% endblock %}

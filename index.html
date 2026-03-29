@@ -1,245 +1,183 @@
 {% extends "base.html" %}
-{% block title %}ParkSmart India — Smart Parking for Bharat{% endblock %}
+{% block title %}Live Grid — {{ lot.name }}{% endblock %}
 {% block content %}
+<div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+  <div>
+    <a href="{{ url_for('vendor_dashboard') }}" class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 mb-2">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+    </a>
+    <h1 class="text-2xl font-bold">{{ lot.name }}</h1>
+    <p class="text-sm text-gray-500 dark:text-gray-400">{{ lot.address }}, {{ lot.city }}</p>
+  </div>
 
-<!-- HERO -->
-<section class="mesh grid-bg" style="padding:80px 0 60px;overflow:hidden;position:relative;min-height:calc(100vh - 64px);display:flex;align-items:center;">
-  <div style="position:absolute;top:20%;left:-10%;width:400px;height:400px;border-radius:50%;background:var(--glow);filter:blur(80px);opacity:.5;pointer-events:none;"></div>
-  <div class="container">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;">
-
-      <!-- Copy -->
-      <div class="animate-slide-up">
-        <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:99px;background:var(--glow);border:1px solid rgba(16,185,129,.25);margin-bottom:20px;">
-          <span class="live-dot"></span>
-          <span style="font-size:12px;font-weight:700;color:var(--accent);font-family:'Plus Jakarta Sans',sans-serif;">Real-Time · No Hardware Needed</span>
-        </div>
-        <h1 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:clamp(2.4rem,5vw,3.6rem);line-height:1.1;letter-spacing:-.02em;color:var(--txt);margin-bottom:18px;">
-          India's Smartest<br/><span class="text-grad">Parking Platform</span>
-        </h1>
-        <p style="font-size:17px;line-height:1.7;color:var(--muted);margin-bottom:28px;max-width:480px;">
-          Find, book, and manage parking in real time. QR digital passes, ₹ smart billing with grace period, live slot grid — all from your browser. No IoT hardware required.
-        </p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px;">
-          <a href="{{ url_for('register') }}?role=customer" class="btn-primary" style="font-size:15px;padding:14px 28px;">
-            🚗 Find Parking Now
-          </a>
-          <a href="{{ url_for('register') }}?role=vendor" class="btn-secondary" style="font-size:15px;padding:14px 24px;">
-            🏢 List Your Lot
-          </a>
-        </div>
-        <!-- Stats -->
-        <div style="display:flex;gap:28px;flex-wrap:wrap;">
-          {% for v,l in [('15 min','Grace Period'),('18%','GST Auto-calc'),('3 sec','Live Updates'),('₹0','Hosting Cost')] %}
-          <div>
-            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.3rem;color:var(--txt);">{{v}}</div>
-            <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">{{l}}</div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- Live preview card -->
-      <div class="ps-card animate-slide-up" style="padding:24px;animation-delay:.15s;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-          <div>
-            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);">Hazratganj Central</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">📍 Lucknow · 0.4 km</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;background:var(--glow);">
-            <span class="live-dot"></span>
-            <span style="font-size:11px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;">LIVE</span>
-          </div>
-        </div>
-        <!-- 5×4 slot grid -->
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px;" id="heroSlotGrid">
-          {% set s_list = ['available','available','occupied','available','reserved','occupied','available','available','available','occupied','available','reserved','available','available','occupied','available','available','occupied','available','available'] %}
-          {% for i in range(20) %}
-          {% set s = s_list[i] %}
-          {% set c = '#10b981' if s=='available' else ('#ef4444' if s=='occupied' else '#f59e0b') %}
-          <div class="slot-card slot-{{s}}" title="S{{'{:02d}'.format(i+1)}} — {{s|capitalize}}">
-            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:9px;color:{{c}};">S{{'{:02d}'.format(i+1)}}</div>
-            <div style="width:6px;height:6px;border-radius:50%;background:{{c}};margin-top:4px;"></div>
-          </div>
-          {% endfor %}
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:11px;color:var(--muted);">🟢 Free &nbsp; 🔴 Taken &nbsp; 🟡 Held</div>
-          <a href="{{ url_for('lots_list') }}" class="btn-primary" style="padding:8px 16px;font-size:12px;">⚡ Book Now</a>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:var(--glow);display:flex;align-items:center;justify-content:center;font-size:18px;">🛵</div>
-            <div>
-              <div style="font-weight:700;font-size:14px;color:var(--txt);">₹10/hr</div>
-              <div style="font-size:11px;color:var(--muted);">2-Wheeler</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:var(--glow);display:flex;align-items:center;justify-content:center;font-size:18px;">🚗</div>
-            <div>
-              <div style="font-weight:700;font-size:14px;color:var(--txt);">₹30/hr</div>
-              <div style="font-size:11px;color:var(--muted);">4-Wheeler</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+  <!-- Live Stats -->
+  <div class="flex gap-3">
+    <div class="bento bg-white dark:bg-slate-900 text-center px-4 py-3 min-w-20">
+      <div class="text-xl font-bold text-emerald-600" id="avail2w">{{ lot.slots|selectattr('slot_type','eq','2w')|selectattr('status','eq','available')|list|length }}</div>
+      <div class="text-xs text-gray-500">🛵 Free</div>
+    </div>
+    <div class="bento bg-white dark:bg-slate-900 text-center px-4 py-3 min-w-20">
+      <div class="text-xl font-bold text-blue-600" id="avail4w">{{ lot.slots|selectattr('slot_type','eq','4w')|selectattr('status','eq','available')|list|length }}</div>
+      <div class="text-xs text-gray-500">🚗 Free</div>
+    </div>
+    <div class="bento bg-white dark:bg-slate-900 text-center px-4 py-3 min-w-20">
+      <div class="text-xl font-bold text-red-500" id="occupiedCount">{{ lot.occupied_count }}</div>
+      <div class="text-xs text-gray-500">Occupied</div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- HOW IT WORKS -->
-<section style="padding:60px 0;">
-  <div class="container">
-    <div style="text-align:center;margin-bottom:44px;">
-      <div style="display:inline-flex;padding:5px 16px;border-radius:99px;background:var(--glow);margin-bottom:10px;">
-        <span style="font-size:12px;font-weight:700;color:var(--accent);font-family:'Plus Jakarta Sans',sans-serif;">HOW IT WORKS</span>
-      </div>
-      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:2rem;color:var(--txt);">3 simple steps 🚀</h2>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
-      {% for step in [
-        ('1','🔍','Find Parking','Search by area or use the map to find the nearest lot with available slots. Filter by 2W or 4W.'),
-        ('2','⚡','One-Tap Book','Select your slot, enter your vehicle number, and confirm. Your digital QR pass is generated instantly.'),
-        ('3','📱','Show & Go','Show the QR pass to the attendant at entry. At exit, get your bill — first 15 min are FREE!'),
-      ] %}
-      <div class="ps-card" style="padding:28px;text-align:center;">
-        <div style="width:52px;height:52px;border-radius:16px;background:var(--glow);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 16px;">{{step[1]}}</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">STEP {{step[0]}}</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;color:var(--txt);margin-bottom:8px;">{{step[2]}}</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.6;">{{step[3]}}</div>
-      </div>
-      {% endfor %}
-    </div>
+<!-- Legend -->
+<div class="flex gap-5 mb-5 text-sm flex-wrap">
+  <span class="flex items-center gap-2 font-medium text-emerald-700 dark:text-emerald-400">
+    <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> Available
+  </span>
+  <span class="flex items-center gap-2 font-medium text-red-600 dark:text-red-400">
+    <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span> Occupied
+  </span>
+  <span class="text-gray-400 text-xs">Click any slot to toggle status</span>
+  <span class="ml-auto text-xs text-gray-400" id="lastUpdate">Auto-refresh every 3s</span>
+</div>
+
+<!-- 2W Section -->
+{% set slots_2w = lot.slots|selectattr('slot_type','eq','2w')|list %}
+{% if slots_2w %}
+<div class="mb-6">
+  <h3 class="font-semibold text-sm text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+    <span class="text-lg">🛵</span> 2-Wheeler Slots ({{ slots_2w|length }} total)
+  </h3>
+  <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+    {% for slot in slots_2w %}
+    <button id="slot-{{ slot.id }}" onclick="toggleSlot({{ slot.id }})"
+      data-status="{{ slot.status }}" data-type="{{ slot.slot_type }}"
+      class="slot-btn aspect-square rounded-xl flex flex-col items-center justify-center text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer
+      {% if slot.status=='available' %}slot-available{% else %}slot-occupied{% endif %}">
+      <span class="text-base">{% if slot.status=='available' %}🟢{% else %}🔴{% endif %}</span>
+      <span class="mt-0.5">{{ slot.label }}</span>
+    </button>
+    {% endfor %}
   </div>
-</section>
-
-<!-- FEATURES BENTO -->
-<section style="padding:40px 0 80px;">
-  <div class="container">
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-
-      <!-- Large feature -->
-      <div class="ps-card" style="padding:28px;grid-column:span 2;">
-        <div style="display:flex;align-items:start;gap:18px;">
-          <div style="width:52px;height:52px;border-radius:16px;background:var(--glow);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">⚡</div>
-          <div>
-            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;color:var(--txt);margin-bottom:8px;">Live Slot Grid — No Hardware</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">Slots update every 3 seconds via JavaScript polling. Vendors manually mark slots via the web UI — no sensors or IoT devices needed. Perfect for FYP demos and real-world use.</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              {% for t in ['Web-based','3s polling','Manual control','Zero hardware'] %}
-              <span style="padding:4px 10px;border-radius:8px;background:var(--glow);color:var(--accent);font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;">{{t}}</span>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="ps-card" style="padding:24px;">
-        <div style="font-size:26px;margin-bottom:12px;">📱</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:var(--txt);margin-bottom:6px;">QR Digital Pass</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Glassmorphism receipt card with real QR code. One-tap WhatsApp share with Namaste receipt.</div>
-      </div>
-
-      <div class="ps-card" style="padding:24px;">
-        <div style="font-size:26px;margin-bottom:12px;">💰</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:var(--txt);margin-bottom:6px;">Smart ₹ Billing</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.6;">First 15 minutes FREE (grace period). Separate 2W/4W rates. GST 18% auto-calculated. Full bill breakdown.</div>
-      </div>
-
-      <div class="ps-card" style="padding:24px;grid-column:span 2;">
-        <div style="display:flex;align-items:start;gap:18px;">
-          <div style="width:52px;height:52px;border-radius:16px;background:rgba(14,165,233,.1);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🗺️</div>
-          <div>
-            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;color:var(--txt);margin-bottom:6px;">GPS Map Discovery</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6;">Leaflet.js + OpenStreetMap. Find the nearest lot in seconds. Sorted by Haversine distance. 100% free — no Google Maps fees.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="ps-card" style="padding:24px;">
-        <div style="font-size:26px;margin-bottom:12px;">🔐</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:var(--txt);margin-bottom:6px;">3-Role Auth</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.6;">Super Admin, Vendor, Customer — each locked to their own dashboard and features.</div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ROLE CARDS -->
-<section style="padding:20px 0 80px;">
-  <div class="container">
-    <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:2rem;color:var(--txt);text-align:center;margin-bottom:32px;">Choose your role</h2>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-      {% for role in [
-        ('super_admin','⚡','Super Admin','Platform analytics, vendor approvals, system health. Full control.','Admin Panel','admin_dashboard','#6366f1'),
-        ('vendor','🏢','Vendor','Add lots, set rates, watch your live slot grid fill up in real time.','Business Manager','vendor_dashboard','#10b981'),
-        ('customer','🚗','Customer','Find parking, one-tap book, get QR pass, share receipt on WhatsApp.','Find Parking','lots_list','#f59e0b'),
-      ] %}
-      <div class="ps-card" style="padding:28px;display:flex;flex-direction:column;">
-        <div style="font-size:32px;margin-bottom:12px;">{{role[1]}}</div>
-        <div style="padding:3px 10px;border-radius:8px;background:{{role[6]}}1a;color:{{role[6]}};font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;display:inline-block;margin-bottom:10px;align-self:start;">{{role[0]|upper}}</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:var(--txt);margin-bottom:8px;">{{role[2]}}</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.6;flex:1;">{{role[3]}}</div>
-        <a href="{{ url_for('register') }}?role={{role[0]}}" class="btn-secondary" style="margin-top:18px;justify-content:center;border-color:{{role[6]}}40;color:{{role[6]}};">
-          {{role[4]}} →
-        </a>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-<!-- DEMO CREDENTIALS -->
-{% if lots %}
-<section style="padding:20px 0 80px;">
-  <div class="container">
-    <div class="ps-card" style="padding:32px;background:var(--glow);border-color:rgba(16,185,129,.2);">
-      <div style="text-align:center;margin-bottom:20px;">
-        <div style="font-size:28px;margin-bottom:8px;">🔑</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;color:var(--txt);">Try the demo instantly</div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:center;">
-        {% for label, email, password in [('Super Admin','admin@parksmart.in','Admin@123'),('Vendor','vendor@parksmart.in','Vendor@123'),('Customer','customer@parksmart.in','Customer@123')] %}
-        <div style="background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border);">
-          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;color:var(--txt);margin-bottom:6px;">{{label}}</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);">{{email}}</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-top:2px;">{{password}}</div>
-        </div>
-        {% endfor %}
-      </div>
-      <div style="text-align:center;margin-top:20px;">
-        <a href="{{ url_for('login') }}" class="btn-primary" style="font-size:15px;padding:12px 28px;">Login Now →</a>
-      </div>
-    </div>
-  </div>
-</section>
+</div>
 {% endif %}
 
+<!-- 4W Section -->
+{% set slots_4w = lot.slots|selectattr('slot_type','eq','4w')|list %}
+{% if slots_4w %}
+<div class="mb-6">
+  <h3 class="font-semibold text-sm text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+    <span class="text-lg">🚗</span> 4-Wheeler Slots ({{ slots_4w|length }} total)
+  </h3>
+  <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+    {% for slot in slots_4w %}
+    <button id="slot-{{ slot.id }}" onclick="toggleSlot({{ slot.id }})"
+      data-status="{{ slot.status }}" data-type="{{ slot.slot_type }}"
+      class="slot-btn aspect-square rounded-xl flex flex-col items-center justify-center text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer
+      {% if slot.status=='available' %}slot-available{% else %}slot-occupied{% endif %}">
+      <span class="text-base">{% if slot.status=='available' %}🟢{% else %}🔴{% endif %}</span>
+      <span class="mt-0.5">{{ slot.label }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 {% endblock %}
+
 {% block scripts %}
 <script>
-/* Animate hero slot grid randomly */
-(function(){
-  const grid = document.getElementById('heroSlotGrid');
-  if(!grid) return;
-  const statuses = ['available','occupied','reserved'];
-  const colors   = {'available':'#10b981','occupied':'#ef4444','reserved':'#f59e0b'};
-  setInterval(() => {
-    const slots = grid.querySelectorAll('.slot-card');
-    if(!slots.length) return;
-    const idx = Math.floor(Math.random() * slots.length);
-    const s   = statuses[Math.floor(Math.random() * statuses.length)];
-    const el  = slots[idx];
-    el.className = `slot-card slot-${s}`;
-    const dot = el.querySelector('div:last-child');
-    if(dot) dot.style.background = colors[s];
-    el.querySelector('div').style.color = colors[s];
-    el.style.transform = 'scale(1.12)';
-    setTimeout(() => { el.style.transform = ''; }, 300);
-  }, 1500);
-})();
+// Live slot refresh every 3 seconds — no page reload (like cricket scores)
+var refreshing = false;
+var countdown = 3;
+
+function updateCountdown() {
+  var el = document.getElementById('refreshCountdown');
+  if (el) el.textContent = countdown + 's';
+  countdown--;
+  if (countdown < 0) {
+    countdown = 3;
+    refreshSlots();
+  }
+}
+
+function refreshSlots() {
+  if (refreshing) return;
+  refreshing = true;
+  var indicator = document.getElementById('liveIndicator');
+  if (indicator) indicator.style.opacity = '0.5';
+
+  fetch('/api/lot/{{ lot.id }}/slots')
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      // Update each slot without page reload
+      data.forEach(function(slot) {
+        var el = document.getElementById('slot-' + slot.id);
+        if (!el) return;
+        // Update color
+        el.className = el.className.replace(/slot-available|slot-occupied/g, '');
+        el.classList.add(slot.is_occupied ? 'slot-occupied' : 'slot-available');
+        // Update text
+        var statusEl = el.querySelector('.slot-status');
+        if (statusEl) statusEl.textContent = slot.is_occupied ? 'Occupied' : 'Free';
+      });
+      // Update counts
+      var free = data.filter(function(s){ return !s.is_occupied; }).length;
+      var occ  = data.filter(function(s){ return  s.is_occupied; }).length;
+      var freeEl = document.getElementById('freeCount');
+      var occEl  = document.getElementById('occCount');
+      if (freeEl) freeEl.textContent = free;
+      if (occEl)  occEl.textContent  = occ;
+
+      refreshing = false;
+      if (indicator) indicator.style.opacity = '1';
+    })
+    .catch(function() { refreshing = false; });
+}
+
+setInterval(updateCountdown, 1000);
+</script>
+<script>
+const LOT_ID = {{ lot.id }};
+let toggling = false;
+
+async function toggleSlot(id) {
+  if (toggling) return;
+  toggling = true;
+  const btn = document.getElementById(`slot-${id}`);
+  btn.style.opacity = '0.5';
+  try {
+    const r = await fetch(`/vendor/slot/${id}/toggle`, {method:'POST'});
+    const d = await r.json();
+    updateSlot(d.id, d.status);
+  } catch(e) { console.error(e); }
+  finally { toggling = false; btn.style.opacity = '1'; }
+}
+
+function updateSlot(id, status) {
+  const btn = document.getElementById(`slot-${id}`);
+  if (!btn) return;
+  const label = btn.querySelector('span:last-child').textContent;
+  btn.dataset.status = status;
+  btn.className = btn.className
+    .replace(/slot-available|slot-occupied/g, '')
+    .trim() + (status === 'available' ? ' slot-available' : ' slot-occupied');
+  btn.innerHTML = `
+    <span class="text-base">${status==='available'?'🟢':'🔴'}</span>
+    <span class="mt-0.5">${label}</span>
+  `;
+}
+
+async function poll() {
+  try {
+    const r = await fetch(`/api/lot/${LOT_ID}/slots`);
+    const d = await r.json();
+    d.slots.forEach(s => updateSlot(s.id, s.status));
+    document.getElementById('avail2w').textContent   = d.avail_2w ?? '';
+    document.getElementById('avail4w').textContent   = d.avail_4w ?? '';
+    document.getElementById('occupiedCount').textContent = d.occupied;
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent =
+      `Updated ${now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+  } catch(e) {}
+}
+setInterval(poll, 3000);
 </script>
 {% endblock %}

@@ -1,212 +1,194 @@
 {% extends "base.html" %}
-{% block title %}Manage Slots — {{ lot.name }}{% endblock %}
+{% block title %}Register — SpotEasy{% endblock %}
 {% block content %}
-<div class="container" style="padding-top:36px;padding-bottom:60px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;">
-    <div>
-      <a href="{{ url_for('vendor_dashboard') }}" style="font-size:13px;color:var(--muted);">← Back to Dashboard</a>
-      <h1 class="section-title" style="margin-top:8px;">{{ lot.name }}</h1>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-        <span class="live-dot"></span>
-        <span style="font-size:12px;color:var(--accent);font-family:'JetBrains Mono',monospace;">Live · Updates every 3s</span>
-        <span style="font-size:12px;color:var(--muted);">· Last update: <span id="lastUpdate">just now</span></span>
+<div class="min-h-[70vh] flex items-center justify-center py-8">
+  <div class="w-full max-w-md animate-scale-in">
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-xl">
+        <i data-lucide="user-plus" class="w-8 h-8 text-white"></i>
       </div>
+      <h1 class="text-3xl font-black text-gray-900 dark:text-white">Create account</h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">Join SpotEasy — it's free 🇮🇳</p>
     </div>
-    <!-- Summary -->
-    <div style="display:flex;gap:12px;flex-wrap:wrap;">
-      <div style="padding:8px 16px;border-radius:12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);font-size:13px;font-weight:700;color:#10b981;">
-        🟢 <span id="cAvail">{{ lot.slots|selectattr('status.value','eq','available')|list|length }}</span> Free
-      </div>
-      <div style="padding:8px 16px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);font-size:13px;font-weight:700;color:#ef4444;">
-        🔴 <span id="cOccup">{{ lot.slots|selectattr('status.value','eq','occupied')|list|length }}</span> Occupied
-      </div>
-      <div style="padding:8px 16px;border-radius:12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);font-size:13px;font-weight:700;color:#f59e0b;">
-        🟡 <span id="cRes">{{ lot.slots|selectattr('status.value','eq','reserved')|list|length }}</span> Reserved
-      </div>
-    </div>
-  </div>
+    <div class="card shadow-2xl">
+      <form method="POST" id="regForm" class="space-y-4" novalidate>
 
-  <!-- Active reservations needing action -->
-  {% if reservations %}
-  <div class="ps-card" style="padding:20px;margin-bottom:20px;">
-    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);margin-bottom:14px;">🎫 Pending / Active Reservations</div>
-    <div style="overflow-x:auto;">
-      <table class="ps-table">
-        <thead><tr><th>Pass</th><th>Customer</th><th>Vehicle</th><th>Slot</th><th>Status</th><th>Entry</th><th>Actions</th></tr></thead>
-        <tbody>
-          {% for r in reservations %}
-          <tr>
-            <td><span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;color:var(--accent);">PS-{{ r.id[:8]|upper }}</span></td>
-            <td style="font-size:13px;">{{ r.customer.full_name }}</td>
-            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">{{ r.vehicle_number }}</td>
-            <td><span class="badge badge-blue">{{ r.slot.slot_number }}</span></td>
-            <td><span class="badge {{ 'badge-blue' if r.status.value=='active' else 'badge-yellow' }}">{{ r.status.value|upper }}</span></td>
-            <td style="font-size:12px;color:var(--muted);">{{ r.entry_time.strftime('%I:%M %p') if r.entry_time else '—' }}</td>
-            <td>
-              <div style="display:flex;gap:6px;">
-                {% if r.status.value == 'pending' %}
-                <button onclick="doCheckin('{{ r.id }}')" class="btn-success" style="padding:5px 10px;font-size:11px;">🚗 Check In</button>
-                {% elif r.status.value == 'active' %}
-                <button onclick="doCheckout('{{ r.id }}')" class="btn-primary" style="padding:5px 10px;font-size:11px;background:#059669;">✅ Checkout</button>
-                {% endif %}
-                <a href="{{ url_for('scan_qr', token=r.qr_token) }}" class="btn-secondary" style="padding:5px 10px;font-size:11px;">View</a>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Full slot grid -->
-  <div class="ps-card" style="padding:20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);">⚡ All Slots — Click to manage</div>
-      <!-- Filter tabs -->
-      <div style="display:flex;gap:6px;">
-        <button onclick="filterSlots('all',this)" class="filter-btn" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--accent);color:white;font-size:12px;font-weight:600;cursor:pointer;" id="fa">All</button>
-        <button onclick="filterSlots('2W',this)" class="filter-btn" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;" id="f2">🛵 2W</button>
-        <button onclick="filterSlots('4W',this)" class="filter-btn" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;" id="f4">🚗 4W</button>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;" id="mainGrid">
-      {% for slot in lot.slots %}
-      <div class="slot-card slot-{{slot.status.value}}" id="sg-{{slot.id}}"
-           data-type="{{slot.slot_type.value}}" data-status="{{slot.status.value}}"
-           onclick="openSlotMenu('{{slot.id}}','{{slot.slot_number}}','{{slot.status.value}}','{{slot.slot_type.value}}')"
-           title="{{slot.slot_number}} — {{slot.slot_type.value}} — {{slot.status.value}}">
-        <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:9px;
-          color:{{'#10b981' if slot.status.value=='available' else '#ef4444' if slot.status.value=='occupied' else '#f59e0b' if slot.status.value=='reserved' else '#6b7280'}};">
-          {{slot.slot_number}}
+        <!-- Name -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Full Name *</label>
+          <input type="text" name="name" id="regName" required minlength="3" maxlength="60"
+                 placeholder="Rahul Sharma" class="inp"/>
+          <p id="nameErr" class="text-red-500 text-xs mt-1 hidden">Name must be at least 3 characters.</p>
         </div>
-        <div style="width:6px;height:6px;border-radius:50%;margin-top:3px;
-          background:{{'#10b981' if slot.status.value=='available' else '#ef4444' if slot.status.value=='occupied' else '#f59e0b' if slot.status.value=='reserved' else '#6b7280'}};"></div>
-        <div style="font-size:8px;color:var(--muted);margin-top:1px;">{{slot.slot_type.value}}</div>
-      </div>
-      {% endfor %}
-    </div>
-    <div style="margin-top:14px;display:flex;gap:16px;font-size:11px;color:var(--muted);flex-wrap:wrap;">
-      <span>🟢 Available — click to mark maintenance</span>
-      <span>🔴 Occupied — checkout via table above</span>
-      <span>🟡 Reserved — awaiting vehicle</span>
-    </div>
-  </div>
-</div>
 
-<!-- Slot action modal -->
-<div id="slotMenu" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px;">
-  <div class="ps-card animate-slide-up" style="width:100%;max-width:340px;padding:24px;">
-    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:var(--txt);margin-bottom:4px;">Slot <span id="smNum">—</span></div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Status: <span id="smStatus">—</span></div>
-    <div id="smBtns" style="display:flex;flex-direction:column;gap:8px;"></div>
-    <button onclick="document.getElementById('slotMenu').style.display='none'" style="width:100%;margin-top:12px;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;">Cancel</button>
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Email Address *</label>
+          <input type="email" name="email" id="regEmail" required
+                 placeholder="you@example.com" class="inp"/>
+          <p id="emailErr" class="text-red-500 text-xs mt-1 hidden">Enter a valid email address.</p>
+        </div>
+
+        <!-- Phone -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+            Phone <span class="text-gray-400 font-normal">(Indian mobile)</span>
+          </label>
+          <div class="flex gap-2">
+            <span class="inp w-14 text-center font-bold shrink-0 bg-gray-50 dark:bg-dark-700 cursor-default">+91</span>
+            <input type="tel" name="phone" id="regPhone" maxlength="10"
+                   placeholder="9876543210" class="inp flex-1"/>
+          </div>
+          <p id="phoneErr" class="text-red-500 text-xs mt-1 hidden">Enter a valid 10-digit Indian mobile number.</p>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Password *</label>
+          <div class="relative">
+            <input type="password" name="password" id="regPw" required minlength="8"
+                   placeholder="Min 8 chars, 1 number" class="inp pr-10"/>
+            <button type="button" onclick="togglePw('regPw','eyeReg')"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <i data-lucide="eye" class="w-4 h-4" id="eyeReg"></i>
+            </button>
+          </div>
+          <!-- Password strength bar -->
+          <div class="mt-2 h-1.5 bg-gray-100 dark:bg-dark-700 rounded-full overflow-hidden">
+            <div id="pwStrengthBar" class="h-full rounded-full transition-all duration-300 w-0"></div>
+          </div>
+          <p id="pwStrengthText" class="text-xs mt-1 text-gray-400"></p>
+          <p id="pwErr" class="text-red-500 text-xs mt-1 hidden">Password must be 8+ chars with at least 1 number.</p>
+        </div>
+
+        <!-- Role -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Register As *</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="cursor-pointer">
+              <input type="radio" name="role" value="customer" class="peer hidden" checked/>
+              <div class="peer-checked:border-green-500 peer-checked:bg-green-50 dark:peer-checked:bg-green-950/40 peer-checked:text-green-700 dark:peer-checked:text-green-300 border-2 border-gray-200 dark:border-dark-600 rounded-2xl p-3 text-center transition-all hover:border-green-300 hover:scale-105">
+                <div class="text-2xl mb-1">🚗</div>
+                <div class="font-bold text-sm">Customer</div>
+                <div class="text-xs text-gray-400">Driver / Parker</div>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="role" value="vendor" class="peer hidden"/>
+              <div class="peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-950/40 peer-checked:text-blue-700 dark:peer-checked:text-blue-300 border-2 border-gray-200 dark:border-dark-600 rounded-2xl p-3 text-center transition-all hover:border-blue-300 hover:scale-105">
+                <div class="text-2xl mb-1">🅿️</div>
+                <div class="font-bold text-sm">Vendor</div>
+                <div class="text-xs text-gray-400">Lot Owner</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Terms -->
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" id="terms" required
+                 class="mt-0.5 w-4 h-4 rounded border-gray-300 accent-green-500"/>
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            I agree to SpotEasy's <a href="/terms" target="_blank" class="text-green-600 font-semibold hover:underline">Terms of Use</a>
+            and confirm I'm 18+. Vendor accounts require admin approval.
+          </span>
+        </label>
+
+        <button type="submit" id="regSubmit"
+          class="btn-primary w-full py-3.5 text-base rounded-2xl mt-2">
+          Create Account →
+        </button>
+      </form>
+      <div class="mt-5 pt-4 border-t border-gray-100 dark:border-dark-700 text-center text-sm text-gray-500">
+        Already have an account?
+        <a href="{{ url_for('login') }}" class="text-green-600 dark:text-green-400 font-bold hover:underline ml-1">Login</a>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 <script>
-const LOT_ID = '{{ lot.id }}';
-let curSlotId = null;
-
-function filterSlots(type, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => { b.style.background='transparent'; b.style.color='var(--muted)'; });
-  btn.style.background = 'var(--accent)'; btn.style.color = 'white';
-  document.querySelectorAll('#mainGrid > div').forEach(el => {
-    el.style.display = (type==='all' || el.dataset.type===type) ? '' : 'none';
-  });
-}
-
-function openSlotMenu(id, num, status, type) {
-  curSlotId = id;
-  document.getElementById('smNum').textContent = num;
-  document.getElementById('smStatus').textContent = status.charAt(0).toUpperCase() + status.slice(1);
-  const btns = document.getElementById('smBtns');
-  btns.innerHTML = '';
-  const add = (label, newStatus, cls) => {
-    const b = document.createElement('button');
-    b.className = cls; b.textContent = label;
-    b.style.width='100%'; b.style.justifyContent='center';
-    b.onclick = () => changeStatus(id, newStatus);
-    btns.appendChild(b);
-  };
-  if(status==='available')    add('🔧 Mark as Maintenance','maintenance','btn-danger');
-  if(status==='maintenance')  add('🟢 Mark as Available','available','btn-success');
-  document.getElementById('slotMenu').style.display = 'flex';
-}
-
-async function changeStatus(slotId, newStatus) {
-  const res = await fetch(`/vendor/slot/${slotId}/toggle`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ status: newStatus })
-  });
-  const data = await res.json();
-  if(data.ok) {
-    updateSlotCard(slotId, newStatus);
-    document.getElementById('slotMenu').style.display='none';
+function togglePw(fieldId, iconId) {
+  const field = document.getElementById(fieldId);
+  const icon  = document.getElementById(iconId);
+  if (field.type === 'password') {
+    field.type = 'text';
+    icon.setAttribute('data-lucide','eye-off');
+  } else {
+    field.type = 'password';
+    icon.setAttribute('data-lucide','eye');
   }
+  lucide.createIcons();
 }
 
-const COLORS = { available:'#10b981', occupied:'#ef4444', reserved:'#f59e0b', maintenance:'#6b7280' };
-function updateSlotCard(slotId, status) {
-  const el = document.getElementById(`sg-${slotId}`);
-  if(!el) return;
-  el.className = `slot-card slot-${status}`;
-  el.dataset.status = status;
-  const col = COLORS[status] || '#6b7280';
-  const children = el.querySelectorAll('div');
-  if(children[0]) children[0].style.color = col;
-  if(children[1]) children[1].style.background = col;
-  el.style.transform = 'scale(1.1)'; setTimeout(() => el.style.transform='', 350);
-  updateSummary();
-}
+// Password strength checker
+document.getElementById('regPw').addEventListener('input', function() {
+  const v = this.value;
+  const bar  = document.getElementById('pwStrengthBar');
+  const text = document.getElementById('pwStrengthText');
+  let score = 0;
+  if (v.length >= 8) score++;
+  if (/[0-9]/.test(v)) score++;
+  if (/[A-Z]/.test(v)) score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
 
-function updateSummary() {
-  const all = document.querySelectorAll('#mainGrid > div');
-  const cnt = s => [...all].filter(e => e.dataset.status===s).length;
-  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-  set('cAvail', cnt('available')); set('cOccup', cnt('occupied')); set('cRes', cnt('reserved'));
-}
+  const levels = [
+    { w:'0%',    cls:'bg-transparent', label:'' },
+    { w:'25%',   cls:'bg-red-500',     label:'Weak' },
+    { w:'50%',   cls:'bg-yellow-500',  label:'Fair' },
+    { w:'75%',   cls:'bg-blue-500',    label:'Good' },
+    { w:'100%',  cls:'bg-green-500',   label:'Strong 💪' },
+  ];
+  const lvl = levels[score];
+  bar.style.width = lvl.w;
+  bar.className   = `h-full rounded-full transition-all duration-300 ${lvl.cls}`;
+  text.textContent = lvl.label;
+  text.className   = `text-xs mt-1 ${score < 2 ? 'text-red-400' : score < 4 ? 'text-yellow-500' : 'text-green-500'}`;
+});
 
-/* 3-second polling */
-async function pollSlots() {
-  try {
-    const res = await fetch(`/api/lots/${LOT_ID}/slots`);
-    const data = await res.json();
-    if(data.slots) {
-      data.slots.forEach(slot => {
-        const el = document.getElementById(`sg-${slot.id}`);
-        if(el && el.dataset.status !== slot.status) {
-          el.dataset.status = slot.status;
-          el.className = `slot-card slot-${slot.status}`;
-          const col = COLORS[slot.status];
-          const ch = el.querySelectorAll('div');
-          if(ch[0]) ch[0].style.color = col;
-          if(ch[1]) ch[1].style.background = col;
-        }
-      });
-      updateSummary();
-    }
-    const el = document.getElementById('lastUpdate');
-    if(el) el.textContent = new Date().toLocaleTimeString('en-IN',{hour12:true});
-  } catch(e) {}
-}
-setInterval(pollSlots, 3000);
+// Phone: digits only
+document.getElementById('regPhone').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g,'').slice(0,10);
+});
 
-async function doCheckin(resId) {
-  const res = await fetch(`/vendor/checkin/${resId}`, { method:'POST' });
-  const d = await res.json();
-  if(d.ok) { alert(`✅ Checked in at ${d.entry_time}`); location.reload(); }
-}
-async function doCheckout(resId) {
-  const res = await fetch(`/vendor/checkout/${resId}`, { method:'POST' });
-  const d = await res.json();
-  if(d.ok) {
-    const msg = d.is_grace ? `🎁 Grace period — ₹0!` : `💰 ₹${d.total} (${d.duration_mins} min)`;
-    alert('✅ ' + msg); location.reload();
-  }
-}
+// Name: no numbers
+document.getElementById('regName').addEventListener('input', function() {
+  this.value = this.value.replace(/[0-9]/g,'');
+});
+
+// Form validation
+document.getElementById('regForm').addEventListener('submit', function(e) {
+  let ok = true;
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const pw    = document.getElementById('regPw').value;
+  const terms = document.getElementById('terms').checked;
+
+  // Name
+  if (name.length < 3) {
+    document.getElementById('nameErr').classList.remove('hidden'); ok = false;
+  } else document.getElementById('nameErr').classList.add('hidden');
+
+  // Email
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    document.getElementById('emailErr').classList.remove('hidden'); ok = false;
+  } else document.getElementById('emailErr').classList.add('hidden');
+
+  // Phone (optional but if filled must be 10 digits)
+  if (phone && !/^[6-9][0-9]{9}$/.test(phone)) {
+    document.getElementById('phoneErr').classList.remove('hidden'); ok = false;
+  } else document.getElementById('phoneErr').classList.add('hidden');
+
+  // Password
+  if (pw.length < 8 || !/[0-9]/.test(pw)) {
+    document.getElementById('pwErr').classList.remove('hidden'); ok = false;
+  } else document.getElementById('pwErr').classList.add('hidden');
+
+  if (!terms) { alert('Please agree to the Terms of Use.'); ok = false; }
+  if (!ok) e.preventDefault();
+});
 </script>
 {% endblock %}

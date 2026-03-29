@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{% block title %}SpotEasy — Smart Parking{% endblock %}</title>
+<link rel="manifest" href="/static/manifest.json"/>
+<meta name="theme-color" content="#16a34a"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="SpotEasy"/>
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png"/>
+<link rel="icon" type="image/png" href="/static/icons/icon-96.png"/>
+
+<!-- Catch PWA install prompt as early as possible -->
+<script>
+window._dPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  window._dPrompt = e;
+});
+</script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        dark: { 800:'#1a1f2e', 900:'#0f1117' }
+      }
+    }
+  }
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style>
+* { font-family: 'Inter', sans-serif; }
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-thumb { background:#22c55e55; border-radius:99px; }
+
+.card {
+  background: white;
+  border-radius: 1.25rem;
+  border: 1px solid #f0f0f0;
+  padding: 1.5rem;
+  transition: all 0.25s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+.dark .card { background:#1a1f2e; border-color:#2d3548; }
+.dark .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+
+.navbar {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.dark .navbar {
+  background: rgba(10,13,20,0.92);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg,#16a34a,#22c55e);
+  color: white;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.35);
+  transition: all 0.2s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34,197,94,0.45); }
+
+.inp {
+  width: 100%;
+  border: 2px solid #e5e7eb;
+  background: white;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.inp:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+.dark .inp { background:#1a1f2e; border-color:#2d3548; color:#f1f5f9; }
+.dark .inp:focus { border-color:#4ade80; }
+
+.slot-available { background: linear-gradient(135deg,#dcfce7,#bbf7d0); border: 2px solid #22c55e; color:#15803d; }
+.slot-occupied  { background: linear-gradient(135deg,#fee2e2,#fecaca); border: 2px solid #ef4444; color:#991b1b; }
+.dark .slot-available { background:rgba(34,197,94,0.2); border-color:#4ade80; color:#86efac; }
+.dark .slot-occupied  { background:rgba(239,68,68,0.2); border-color:#f87171; color:#fca5a5; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+@keyframes scaleIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+@keyframes installBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+.animate-fade-in  { animation: fadeUp 0.4s ease both; }
+.animate-scale-in { animation: scaleIn 0.3s ease both; }
+.animate-on-scroll { opacity:0; transform:translateY(20px); transition:opacity 0.5s,transform 0.5s; }
+
+#installFloatBtn { animation: installBounce 3s ease-in-out infinite; }
+
+@media print { nav, footer, #installFloatBtn, #installTopBanner { display:none!important; } }
+</style>
+
+<script>
+// Apply saved theme before page renders (prevents flash)
+(function(){
+  var t = localStorage.getItem('se_theme') ||
+    (window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+  if (t === 'dark') document.documentElement.classList.add('dark');
+})();
+</script>
+</head>
+
+<body class="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+<!-- NAVBAR -->
+<nav class="navbar sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-2.5 group">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+        <i data-lucide="parking-circle" class="w-5 h-5 text-white"></i>
+      </div>
+      <div class="flex flex-col leading-none">
+        <span class="font-black text-lg text-gray-900 dark:text-white">SpotEasy</span>
+        <span class="text-xs text-green-600 dark:text-green-400 font-semibold hidden sm:block">India 🇮🇳</span>
+      </div>
+    </a>
+
+    <!-- Nav links -->
+    <div class="flex items-center gap-1 sm:gap-2">
+      {% if current_user.is_authenticated %}
+
+        <!-- User badge -->
+        <div class="hidden sm:flex items-center gap-2 bg-gray-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl mr-1">
+          <div class="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white text-xs font-bold">{{ current_user.name[0].upper() }}</div>
+          <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ current_user.name.split()[0] }}</span>
+          <span class="text-xs px-1.5 py-0.5 rounded-md font-bold
+            {% if current_user.role=='admin' %}bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300
+            {% elif current_user.role=='vendor' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
+            {% else %}bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300{% endif %}">
+            {{ current_user.role }}
+          </span>
+        </div>
+
+        {% if current_user.role == 'customer' %}
+          <a href="{{ url_for('customer_dashboard') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-green-600 transition-all">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+          </a>
+          <a href="{{ url_for('lots_list') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-green-600 transition-all">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> Find Parking
+          </a>
+          <a href="{{ url_for('account') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-green-600 transition-all">
+            <i data-lucide="user-circle" class="w-4 h-4"></i> Profile
+          </a>
+
+        {% elif current_user.role == 'vendor' %}
+          <a href="{{ url_for('vendor_dashboard') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-green-600 transition-all">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+          </a>
+          <a href="{{ url_for('add_lot') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-green-600 transition-all">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Lot
+          </a>
+          <a href="{{ url_for('account') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-green-600 transition-all">
+            <i data-lucide="user-circle" class="w-4 h-4"></i> Profile
+          </a>
+
+        {% elif current_user.role == 'admin' %}
+          <a href="{{ url_for('admin_dashboard') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-green-600 transition-all">
+            <i data-lucide="shield-check" class="w-4 h-4"></i> Admin
+          </a>
+          <a href="{{ url_for('admin_db_view') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-green-600 transition-all">
+            <i data-lucide="database" class="w-4 h-4"></i> DB
+          </a>
+        {% endif %}
+
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Logout</span>
+        </a>
+
+      {% else %}
+        <a href="{{ url_for('login') }}" class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all">Login</a>
+        <a href="{{ url_for('register') }}" class="btn-primary text-sm px-4 py-2 rounded-xl">Register</a>
+      {% endif %}
+
+      <!-- Dark/Light toggle -->
+      <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-all" aria-label="Toggle theme">
+        <i data-lucide="sun" class="w-4 h-4 text-amber-500 dark:hidden"></i>
+        <i data-lucide="moon" class="w-4 h-4 text-indigo-400 hidden dark:block"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="max-w-7xl mx-auto px-4 mt-4 space-y-2">
+    {% for category, message in messages %}
+    <div class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold
+      {% if category=='danger' %}bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800
+      {% elif category=='success' %}bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800
+      {% elif category=='warning' %}bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800
+      {% else %}bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800{% endif %}">
+      <i data-lucide="{% if category=='danger' %}alert-circle{% elif category=='success' %}check-circle-2{% else %}info{% endif %}" class="w-4 h-4 shrink-0"></i>
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<!-- MAIN CONTENT -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- FOOTER -->
+<footer class="border-t border-gray-100 dark:border-slate-800 mt-16 py-6">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-400">
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+        <i data-lucide="parking-circle" class="w-3 h-3 text-white"></i>
+      </div>
+      <span class="font-semibold">SpotEasy India &copy; 2026</span>
+      <a href="/terms" class="hover:text-green-500 transition-colors ml-2">Terms</a>
+    </div>
+    <span class="text-green-500 font-mono text-xs" id="footerClock"></span>
+  </div>
+</footer>
+
+<!-- INSTALL APP: Floating button (mobile) -->
+<div id="installFloatBtn" style="display:block;position:fixed;bottom:20px;right:16px;z-index:998;">
+  <button onclick="doInstall()"
+    style="display:flex;flex-direction:column;align-items:center;gap:3px;background:linear-gradient(135deg,#16a34a,#22c55e);color:white;border:none;border-radius:20px;padding:13px 16px;font-weight:800;font-size:11px;cursor:pointer;box-shadow:0 8px 28px rgba(22,163,74,0.55);">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Install<br/>App
+  </button>
+  <button onclick="hideInstall()"
+    style="position:absolute;top:-8px;right:-8px;background:#ef4444;color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;font-weight:900;display:flex;align-items:center;justify-content:center;">&#x2715;</button>
+</div>
+
+<!-- INSTALL APP: Top banner (desktop/tablet) -->
+<div id="installTopBanner" style="display:block;position:fixed;top:64px;left:0;right:0;z-index:997;background:linear-gradient(135deg,#14532d,#166534);border-bottom:1px solid rgba(34,197,94,0.3);padding:10px 20px;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <img src="/static/icons/icon-72.png" style="width:36px;height:36px;border-radius:10px;"/>
+      <div>
+        <span style="color:white;font-weight:800;font-size:14px;">Install SpotEasy App</span>
+        <span style="color:#86efac;font-size:12px;margin-left:8px;">Free &middot; Works Offline &middot; No App Store needed</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="doInstall()" style="background:#16a34a;color:white;border:none;border-radius:10px;padding:8px 18px;font-weight:800;font-size:13px;cursor:pointer;">&#128242; Install Free</button>
+      <button onclick="hideInstall()" style="background:rgba(255,255,255,0.12);color:#86efac;border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:8px 12px;font-size:13px;cursor:pointer;">&#x2715;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Icons
+lucide.createIcons();
+
+// Theme toggle
+function toggleTheme() {
+  var dark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('se_theme', dark ? 'dark' : 'light');
+  lucide.createIcons();
+}
+
+// Footer clock
+function updateClock() {
+  var el = document.getElementById('footerClock');
+  if (!el) return;
+  try {
+    el.textContent = new Date().toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata', day:'2-digit', month:'short',
+      year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true
+    }) + ' IST';
+  } catch(e) {}
+}
+updateClock();
+setInterval(updateClock, 60000);
+
+// Scroll animations
+var _obs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'none';
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.animate-on-scroll').forEach(function(el) { _obs.observe(el); });
+
+// ── PWA Install — EXACT V21 LOGIC ─────────────────────────────────
+var deferredPrompt = window._dPrompt || null;
+var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+// Also listen for prompt in case it fires after page load
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  window._dPrompt = e;
+  showInstallUI();
+});
+
+function showInstallUI() {
+  if (isStandalone) return;
+  if (localStorage.getItem('se_installed')) return;
+  if (localStorage.getItem('se_hide')) return;
+  if (window.innerWidth < 768 || isIOS) {
+    var fb = document.getElementById('installFloatBtn');
+    if (fb) fb.style.display = 'block';
+  } else {
+    var tb = document.getElementById('installTopBanner');
+    if (tb) tb.style.display = 'block';
+  }
+}
+
+function hideInstall() {
+  var fb = document.getElementById('installFloatBtn');
+  var tb = document.getElementById('installTopBanner');
+  if (fb) fb.style.display = 'none';
+  if (tb) tb.style.display = 'none';
+  localStorage.setItem('se_hide', '1');
+}
+
+function doInstall() {
+  // iOS — show step by step
+  if (isIOS) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:16px;';
+    overlay.innerHTML =
+      '<div style="background:white;border-radius:24px;padding:24px;width:100%;max-width:420px;color:#111827;text-align:center;">' +
+      '<img src="/static/icons/icon-72.png" style="width:52px;height:52px;border-radius:14px;margin-bottom:10px;"/>' +
+      '<div style="font-size:19px;font-weight:900;margin-bottom:14px;">Install on iPhone / iPad</div>' +
+      '<div style="background:#f0fdf4;border-radius:12px;padding:14px;text-align:left;font-size:14px;line-height:2.4;color:#374151;border:1px solid #bbf7d0;">' +
+      '<div>1. Tap <b>Share &#11014;</b> at the bottom of Safari</div>' +
+      '<div>2. Scroll and tap <b>Add to Home Screen</b></div>' +
+      '<div>3. Tap <b>Add</b> &mdash; Done!</div>' +
+      '</div>' +
+      '<button onclick="this.closest(\'[style*=fixed]\').remove()" style="width:100%;margin-top:14px;background:#16a34a;color:white;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;">Got it!</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    return;
+  }
+
+  // Android / Desktop — use native prompt
+  var p = deferredPrompt || window._dPrompt;
+  if (p) {
+    p.prompt();
+    p.userChoice.then(function(result) {
+      if (result.outcome === 'accepted') {
+        hideInstall();
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#16a34a;color:white;padding:12px 22px;border-radius:14px;font-size:14px;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.2);white-space:nowrap;';
+        toast.textContent = 'SpotEasy installed! Open from home screen.';
+        document.body.appendChild(toast);
+        setTimeout(function() { toast.remove(); }, 3000);
+      }
+      deferredPrompt = null;
+      window._dPrompt = null;
+    });
+    return;
+  }
+
+  // No prompt available — guide user
+  var isMob = /Android/i.test(navigator.userAgent);
+  var overlay2 = document.createElement('div');
+  overlay2.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay2.innerHTML =
+    '<div style="background:white;border-radius:24px;padding:24px;width:100%;max-width:400px;color:#111827;text-align:center;">' +
+    '<img src="/static/icons/icon-72.png" style="width:52px;height:52px;border-radius:14px;margin-bottom:10px;"/>' +
+    '<div style="font-size:18px;font-weight:900;margin-bottom:12px;">Install SpotEasy</div>' +
+    '<div style="background:#f0fdf4;border-radius:12px;padding:14px;text-align:left;font-size:14px;line-height:2.4;color:#374151;border:1px solid #bbf7d0;">' +
+    (isMob
+      ? '<div>1. Tap <b>3-dot menu &#8942;</b> in Chrome</div><div>2. Tap <b>Add to Home screen</b></div><div>3. Tap <b>Add</b></div>'
+      : '<div>1. Click <b>install icon &#8853;</b> in address bar</div><div>2. Or Chrome menu &#8942; &rarr; <b>Install SpotEasy</b></div><div>3. Click <b>Install</b></div>') +
+    '</div>' +
+    '<button onclick="this.closest(\'[style*=fixed]\').remove()" style="width:100%;margin-top:14px;background:#16a34a;color:white;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;">OK, got it!</button>' +
+    '</div>';
+  document.body.appendChild(overlay2);
+}
+
+// Show install UI on load
+window.addEventListener('appinstalled', function() {
+  hideInstall();
+  localStorage.setItem('se_installed', '1');
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Always show the right button based on screen size
+  if (isStandalone || localStorage.getItem('se_installed')) {
+    // Already installed — hide both
+    var fb = document.getElementById('installFloatBtn');
+    var tb = document.getElementById('installTopBanner');
+    if (fb) fb.style.display = 'none';
+    if (tb) tb.style.display = 'none';
+    return;
+  }
+  if (localStorage.getItem('se_hide')) {
+    var fb = document.getElementById('installFloatBtn');
+    var tb = document.getElementById('installTopBanner');
+    if (fb) fb.style.display = 'none';
+    if (tb) tb.style.display = 'none';
+    return;
+  }
+  // Show correct button for screen size
+  if (window.innerWidth < 768) {
+    document.getElementById('installTopBanner').style.display = 'none';
+  } else {
+    document.getElementById('installFloatBtn').style.display = 'none';
+  }
+});
+</script>
+
+<!-- Register service worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+</script>
+
+{% if current_user.is_authenticated %}
+<script src="/static/keep-alive.js" defer></script>
+<script src="/static/notifications.js" defer></script>
+{% endif %}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

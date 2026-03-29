@@ -1,54 +1,117 @@
 {% extends "base.html" %}
-{% block title %}Sign In — ParkSmart India{% endblock %}
-{% block content %}
-<div style="min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:40px 16px;" class="mesh">
-  <div class="ps-card animate-slide-up" style="width:100%;max-width:420px;padding:36px;">
+{% block title %}My Bookings — SpotEasy{% endblock %}
 
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:40px;margin-bottom:12px;">🔐</div>
-      <h1 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.6rem;color:var(--txt);">Welcome back</h1>
-      <p style="font-size:14px;color:var(--muted);margin-top:4px;">Sign in to your ParkSmart account</p>
-    </div>
-
-    <form method="POST" action="{{ url_for('login') }}">
-      <div class="ps-form-group">
-        <label class="ps-label">Email address</label>
-        <input name="email" type="email" class="ps-input" placeholder="you@example.com" required autocomplete="email"/>
-      </div>
-      <div class="ps-form-group">
-        <label class="ps-label">Password</label>
-        <input name="password" type="password" class="ps-input" placeholder="Your password" required autocomplete="current-password"/>
-      </div>
-      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:13px;">
-        Sign In →
-      </button>
-    </form>
-
-    <div style="height:1px;background:var(--border);margin:20px 0;"></div>
-
-    <p style="text-align:center;font-size:13px;color:var(--muted);">
-      No account? <a href="{{ url_for('register') }}" style="color:var(--accent);font-weight:600;">Register here</a>
-    </p>
-
-    <!-- Quick demo logins -->
-    <div style="margin-top:20px;padding:16px;background:var(--card2);border-radius:12px;border:1px solid var(--border);">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">Quick Demo Login</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        {% for label,email,pw in [('👑 Admin','admin@parksmart.in','Admin@123'),('🏢 Vendor','vendor@parksmart.in','Vendor@123'),('🚗 Customer','customer@parksmart.in','Customer@123')] %}
-        <button onclick="fillLogin('{{email}}','{{pw}}')" style="padding:6px 12px;border-radius:8px;background:var(--glow);border:1px solid rgba(16,185,129,.2);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
-          {{label}}
-        </button>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-</div>
-{% endblock %}
 {% block scripts %}
 <script>
-function fillLogin(email, pw) {
-  document.querySelector('input[name="email"]').value = email;
-  document.querySelector('input[name="password"]').value = pw;
+// Live refresh active booking timer — no page reload
+function liveRefreshStats() {
+  fetch('/api/customer/stats')
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      var a = document.getElementById('activeCount');
+      var c = document.getElementById('completedCount');
+      var t = document.getElementById('totalCount');
+      var s = document.getElementById('spentCount');
+      if (a) a.textContent = d.active || 0;
+      if (c) c.textContent = d.completed || 0;
+      if (t) t.textContent = d.total_bookings || 0;
+      if (s) s.textContent = '₹' + (d.total_spent || 0);
+      // Show live dot if active booking exists
+      var dot = document.getElementById('liveDot');
+      if (dot) dot.style.display = d.active > 0 ? 'inline-block' : 'none';
+    }).catch(function(){});
 }
+// Refresh every 15 seconds silently
+setInterval(liveRefreshStats, 15000);
 </script>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-3xl font-black text-gray-900 dark:text-white">My Dashboard</h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">Welcome back, {{ current_user.name.split()[0] }}! 👋</p>
+    </div>
+    <a href="{{ url_for('lots_list') }}" class="btn-primary px-6 py-3 rounded-2xl inline-flex items-center gap-2 text-sm">
+      <i data-lucide="map-pin" class="w-4 h-4"></i> Find Parking
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 stagger">
+    {% set active_count = reservations|selectattr('status','eq','active')|list|length %}
+    {% set done_count = reservations|selectattr('status','eq','completed')|list|length %}
+    {% set total_spent = reservations|selectattr('status','eq','completed')|sum(attribute='amount_paid') %}
+
+    <div class="card text-center">
+      <div class="text-3xl font-black text-blue-600 dark:text-blue-400" id="activeCount">{{ active_count }}</div>
+      <span id="liveDot" style="display:none;" class="w-2 h-2 bg-green-500 rounded-full animate-pulse inline-block ml-1"></span>
+      <div class="text-xs text-gray-500 mt-1 font-semibold">Active Now 🔴</div>
+    </div>
+    <div class="card text-center">
+      <div class="text-3xl font-black text-green-600 dark:text-green-400" id="completedCount">{{ done_count }}</div>
+      <div class="text-xs text-gray-500 mt-1 font-semibold">Completed</div>
+    </div>
+    <div class="card text-center">
+      <div class="text-3xl font-black text-purple-600 dark:text-purple-400" id="totalCount">{{ reservations|length }}</div>
+      <div class="text-xs text-gray-500 mt-1 font-semibold">Total</div>
+    </div>
+    <div class="card text-center">
+      <div class="text-2xl font-black text-amber-600 dark:text-amber-400" id="spentCount">&#8377;{{ total_spent|int }}</div>
+      <div class="text-xs text-gray-500 mt-1 font-semibold">Spent</div>
+    </div>
+  </div>
+
+  <!-- Bookings -->
+  <h2 class="text-xl font-black text-gray-900 dark:text-white mb-4">My Bookings</h2>
+
+  {% if reservations %}
+  <div class="space-y-4">
+    {% for res in reservations %}
+    <div class="card" data-status="{{ res.status }}">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0
+            {% if res.status=='active' %}bg-blue-100 dark:bg-blue-900/40{% else %}bg-gray-100 dark:bg-slate-800{% endif %}">
+            <i data-lucide="car" class="w-6 h-6 {% if res.status=='active' %}text-blue-600 dark:text-blue-400{% else %}text-gray-400{% endif %}"></i>
+          </div>
+          <div>
+            <p class="font-black text-gray-900 dark:text-white">{{ res.slot.lot.name }}</p>
+            <p class="text-sm text-gray-500">Slot {{ res.slot.label }} &bull; {{ res.vehicle_no }} &bull; {{ res.vehicle_type }}</p>
+            <p class="text-xs text-gray-400">{{ res.entry_time.strftime('%d %b %Y, %I:%M %p') if res.entry_time else '' }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="px-3 py-1 rounded-full text-xs font-bold
+            {% if res.status=='active' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
+            {% elif res.status=='completed' %}bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300
+            {% else %}bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400{% endif %}">
+            {{ res.status|upper }}
+          </span>
+          {% if res.status == 'active' %}
+          <a href="{{ url_for('digital_pass', rid=res.id) }}" class="btn-primary px-4 py-2 rounded-xl text-xs">
+            View Pass
+          </a>
+          {% elif res.status == 'completed' %}
+          <span class="text-sm font-bold text-gray-700 dark:text-gray-300">&#8377;{{ res.amount_paid|int }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card text-center py-16">
+    <div class="text-6xl mb-4">🅿️</div>
+    <h3 class="text-xl font-bold text-gray-500 dark:text-gray-400 mb-2">No bookings yet</h3>
+    <p class="text-gray-400 text-sm mb-6">Find a parking spot near you and book instantly</p>
+    <a href="{{ url_for('lots_list') }}" class="btn-primary px-8 py-3 rounded-xl inline-flex items-center gap-2">
+      <i data-lucide="map-pin" class="w-4 h-4"></i> Find Parking
+    </a>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}

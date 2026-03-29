@@ -1,265 +1,213 @@
 {% extends "base.html" %}
-{% block title %}Vendor Dashboard — ParkSmart India{% endblock %}
+{% block title %}My Account — SpotEasy{% endblock %}
 {% block content %}
-<div class="container" style="padding-top:36px;padding-bottom:60px;">
 
-  <!-- Header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
-    <div>
-      <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;background:var(--glow);margin-bottom:8px;">
-        <span class="live-dot"></span>
-        <span style="font-size:11px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;">BUSINESS MANAGER</span>
-      </div>
-      <h1 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.8rem;color:var(--txt);">
-        {{ current_user.business_name or current_user.full_name }}
-      </h1>
-      <p style="font-size:14px;color:var(--muted);margin-top:4px;">Manage your lots · Watch live occupancy · Track revenue</p>
-    </div>
-    <a href="{{ url_for('add_lot') }}" class="btn-primary">+ Add Parking Lot</a>
+<div class="max-w-4xl mx-auto">
+  <div class="mb-8 animate-fade-in">
+    <h1 class="text-3xl font-black text-gray-900 dark:text-white">My Account</h1>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Manage your profile and view your activity</p>
   </div>
 
-  {% if not lots %}
-  <!-- Empty state -->
-  <div class="ps-card" style="padding:60px;text-align:center;">
-    <div style="font-size:56px;margin-bottom:16px;">🏗️</div>
-    <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:1.2rem;color:var(--txt);margin-bottom:8px;">No parking lots yet</div>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:20px;">Add your first parking lot to get started. After admin approval, it goes live!</p>
-    <a href="{{ url_for('add_lot') }}" class="btn-primary" style="font-size:15px;padding:12px 28px;">Add Your First Lot →</a>
-  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-  {% else %}
+    <!-- LEFT: Profile Card -->
+    <div class="lg:col-span-1 space-y-5">
 
-  <!-- Stats -->
-  {% set total_slots = lots|sum(attribute='slots')|list|length %}
-  {% set total_lots  = lots|length %}
-  {% set active_lots = lots|selectattr('status.value','eq','active')|list|length %}
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
-    {% for v,l,icon,c in [
-      (total_lots,'Total Lots','🏢','#6366f1'),
-      (active_lots,'Active Lots','✅','#10b981'),
-      (lots|sum(attribute='total_available'),'Available Slots','🟢','#f59e0b'),
-      (lots|selectattr('status.value','eq','pending')|list|length,'Pending Approval','⏳','#0ea5e9'),
-    ] %}
-    <div class="stat-card">
-      <div class="stat-icon" style="background:{{c}}1a;font-size:18px;">{{icon}}</div>
-      <div class="stat-num">{{v}}</div>
-      <div class="stat-label">{{l}}</div>
-    </div>
-    {% endfor %}
-  </div>
-
-  <!-- Lots list with slot grids -->
-  {% for lot in lots %}
-  <div class="ps-card" style="margin-bottom:20px;overflow:hidden;">
-    <!-- Lot header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:18px 20px;border-bottom:1px solid var(--border);">
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:var(--txt);">{{lot.name}}</span>
-          <span class="badge {{'badge-green' if lot.status.value=='active' else 'badge-yellow' if lot.status.value=='pending' else 'badge-red'}}">
-            {{lot.status.value|upper}}
+      <!-- Avatar Card -->
+      <div class="card text-center animate-scale-in">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-xl text-4xl font-black text-white">
+          {{ current_user.name[0].upper() }}
+        </div>
+        <h2 class="font-black text-xl text-gray-900 dark:text-white">{{ current_user.name }}</h2>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ current_user.email }}</p>
+        <div class="mt-3">
+          <span class="inline-block px-3 py-1 rounded-full text-xs font-bold
+            {% if current_user.role=='admin' %}bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300
+            {% elif current_user.role=='vendor' %}bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300
+            {% else %}bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300{% endif %}">
+            {% if current_user.role=='admin' %}👑 Super Admin
+            {% elif current_user.role=='vendor' %}🅿️ Parking Vendor
+            {% else %}🚗 Customer{% endif %}
           </span>
-          {% if lot.status.value == 'active' %}
-          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--accent);font-family:'JetBrains Mono',monospace;">
-            <span class="live-dot"></span> LIVE
+        </div>
+        {% if current_user.phone %}
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-3 flex items-center justify-center gap-1">
+          <i data-lucide="phone" class="w-3.5 h-3.5"></i> +91 {{ current_user.phone }}
+        </p>
+        {% endif %}
+        <p class="text-xs text-gray-400 dark:text-gray-600 mt-2 flex items-center justify-center gap-1">
+          <i data-lucide="calendar" class="w-3 h-3"></i>
+          Member since {{ current_user.created_at.strftime('%B %Y') }}
+        </p>
+      </div>
+
+      <!-- Stats Card -->
+      {% if current_user.role == 'customer' %}
+      <div class="card animate-on-scroll">
+        <h3 class="font-bold text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Activity</h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+              <i data-lucide="bookmark" class="w-4 h-4 text-green-500"></i> Total Bookings
+            </span>
+            <span class="font-black text-gray-900 dark:text-white">{{ stats.total_bookings }}</span>
           </div>
-          {% endif %}
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:3px;">📍 {{lot.address}}, {{lot.city}} &nbsp;·&nbsp; 🛵 ₹{{lot.rate_2w}}/hr &nbsp;·&nbsp; 🚗 ₹{{lot.rate_4w}}/hr</div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <a href="{{ url_for('lot_grid', lot_id=lot.id) }}" class="btn-secondary" style="padding:8px 14px;font-size:13px;">⚡ Manage Slots</a>
-      </div>
-    </div>
-
-    <!-- Slot grid preview (if active) -->
-    {% if lot.status.value == 'active' and lot.slots %}
-    <div style="padding:16px 20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-size:13px;font-weight:600;color:var(--muted);">Slot Grid — Live View</div>
-        <div style="display:flex;gap:12px;font-size:11px;color:var(--muted);">
-          <span>🟢 {{ lot.slots|selectattr('status.value','eq','available')|list|length }} free</span>
-          <span>🔴 {{ lot.slots|selectattr('status.value','eq','occupied')|list|length }} occupied</span>
-          <span>🟡 {{ lot.slots|selectattr('status.value','eq','reserved')|list|length }} reserved</span>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;"
-           id="grid-{{lot.id}}">
-        {% for slot in lot.slots %}
-        <div class="slot-card slot-{{slot.status.value}}" id="slot-{{slot.id}}"
-             data-slot-id="{{slot.id}}" data-status="{{slot.status.value}}"
-             style="padding:8px 4px;"
-             onclick="handleSlotClick('{{slot.id}}','{{slot.status.value}}','{{slot.slot_number}}')">
-          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:9px;
-            color:{{'#10b981' if slot.status.value=='available' else '#ef4444' if slot.status.value=='occupied' else '#f59e0b' if slot.status.value=='reserved' else '#6b7280'}};">
-            {{slot.slot_number}}
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+              <i data-lucide="clock" class="w-4 h-4 text-yellow-500"></i> Active Now
+            </span>
+            <span class="font-black text-green-600">{{ stats.active }}</span>
           </div>
-          <div style="width:5px;height:5px;border-radius:50%;margin-top:3px;
-            background:{{'#10b981' if slot.status.value=='available' else '#ef4444' if slot.status.value=='occupied' else '#f59e0b' if slot.status.value=='reserved' else '#6b7280'}};"></div>
-          <div style="font-size:8px;color:var(--muted);margin-top:2px;">{{slot.slot_type.value}}</div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-blue-500"></i> Completed
+            </span>
+            <span class="font-black text-gray-900 dark:text-white">{{ stats.completed }}</span>
+          </div>
+          <div class="border-t border-gray-100 dark:border-dark-700 pt-3 flex items-center justify-between">
+            <span class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <i data-lucide="indian-rupee" class="w-4 h-4 text-purple-500"></i> Total Spent
+            </span>
+            <span class="font-black text-xl text-gray-900 dark:text-white">₹{{ stats.total_spent|int }}</span>
+          </div>
         </div>
-        {% endfor %}
+      </div>
+      {% elif current_user.role == 'vendor' %}
+      <div class="card animate-on-scroll">
+        <h3 class="font-bold text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">My Lots</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between"><span class="text-sm text-gray-600 dark:text-gray-300">Total Lots</span><span class="font-black text-gray-900 dark:text-white">{{ stats.total_lots }}</span></div>
+          <div class="flex justify-between"><span class="text-sm text-gray-600 dark:text-gray-300">Active Lots</span><span class="font-black text-green-600">{{ stats.active_lots }}</span></div>
+          <div class="flex justify-between"><span class="text-sm text-gray-600 dark:text-gray-300">Total Slots</span><span class="font-black text-gray-900 dark:text-white">{{ stats.total_slots }}</span></div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT: Edit Forms -->
+    <div class="lg:col-span-2 space-y-5">
+
+      <!-- Update Profile -->
+      <div class="card animate-on-scroll">
+        <h3 class="font-black text-lg text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+            <i data-lucide="user" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+          </div>
+          Edit Profile
+        </h3>
+        <form method="POST" class="space-y-4">
+          <input type="hidden" name="action" value="update_profile"/>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Full Name</label>
+              <input type="text" name="name" value="{{ current_user.name }}" required minlength="3" class="inp"/>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Phone</label>
+              <div class="flex gap-2">
+                <span class="inp w-14 text-center font-bold shrink-0 bg-gray-50 dark:bg-dark-700 cursor-default text-sm">+91</span>
+                <input type="tel" name="phone" value="{{ current_user.phone or '' }}" maxlength="10" placeholder="9876543210" class="inp flex-1"/>
+              </div>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
+              <input type="email" value="{{ current_user.email }}" disabled
+                     class="inp bg-gray-50 dark:bg-dark-800 cursor-not-allowed opacity-60"/>
+              <p class="text-xs text-gray-400 mt-1">Email cannot be changed. Contact admin if needed.</p>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-sm">
+            Save Changes ✓
+          </button>
+        </form>
       </div>
 
-      <!-- 3-second polling status -->
-      <div style="margin-top:10px;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:6px;">
-        <span class="live-dot" style="width:6px;height:6px;"></span>
-        Auto-refreshes every 3 seconds &nbsp;·&nbsp;
-        Last updated: <span id="lastPoll-{{lot.id}}">just now</span>
+      <!-- Change Password -->
+      <div class="card animate-on-scroll">
+        <h3 class="font-black text-lg text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-yellow-100 dark:bg-yellow-900/40 flex items-center justify-center">
+            <i data-lucide="lock" class="w-4 h-4 text-yellow-600 dark:text-yellow-400"></i>
+          </div>
+          Change Password
+        </h3>
+        <form method="POST" class="space-y-4" id="pwForm">
+          <input type="hidden" name="action" value="change_password"/>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Current Password</label>
+            <input type="password" name="old_password" required class="inp" placeholder="Your current password"/>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
+              <input type="password" name="new_password" id="newPw" required minlength="8" class="inp" placeholder="Min 8 chars"/>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Confirm New Password</label>
+              <input type="password" name="confirm_password" id="confPw" required class="inp" placeholder="Repeat new password"/>
+            </div>
+          </div>
+          <p id="pwMatchErr" class="text-red-500 text-xs hidden">⚠️ Passwords do not match.</p>
+          <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all hover:scale-105">
+            Update Password 🔒
+          </button>
+        </form>
       </div>
+
+      <!-- Recent Bookings (customer only) -->
+      {% if current_user.role == 'customer' and stats.recent %}
+      <div class="card animate-on-scroll">
+        <h3 class="font-black text-lg text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+            <i data-lucide="history" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+          </div>
+          Recent Bookings
+        </h3>
+        <div class="space-y-3">
+          {% for r in stats.recent %}
+          <a href="{{ url_for('digital_pass', rid=r.id) }}"
+             class="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-all hover:scale-[1.01] group">
+            <div>
+              <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ r.slot.lot.name }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ r.slot.label }} · {{ r.vehicle_no }} · {{ r.entry_time.strftime('%d %b %Y') }}</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold px-2 py-1 rounded-full
+                {% if r.status=='active' %}bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300
+                {% else %}bg-gray-100 dark:bg-dark-700 text-gray-500{% endif %}">
+                {{ '🟢' if r.status=='active' else '✅' }} {{ r.status }}
+              </span>
+              {% if r.amount_paid %}<p class="text-sm font-black text-gray-900 dark:text-white mt-1">₹{{ r.amount_paid|int }}</p>{% endif %}
+            </div>
+          </a>
+          {% endfor %}
+          <a href="{{ url_for('customer_dashboard') }}" class="block text-center text-sm text-green-600 dark:text-green-400 font-semibold hover:underline pt-1">
+            View all bookings →
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
     </div>
-    {% elif lot.status.value == 'pending' %}
-    <div style="padding:24px 20px;text-align:center;color:var(--muted);font-size:13px;">
-      ⏳ Pending admin approval. Slots will appear after approval.
-    </div>
-    {% endif %}
-  </div>
-  {% endfor %}
-
-  {% endif %}
-</div>
-
-<!-- Slot click modal -->
-<div id="slotModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;">
-  <div class="ps-card animate-slide-up" style="width:100%;max-width:360px;padding:28px;">
-    <h3 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;color:var(--txt);margin-bottom:4px;">Slot <span id="modalSlotNum">—</span></h3>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Current: <strong id="modalStatus">—</strong></p>
-
-    <div id="modalActions" style="display:flex;flex-direction:column;gap:8px;"></div>
-
-    <button onclick="closeModal()" style="margin-top:14px;width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;">Cancel</button>
   </div>
 </div>
-
 {% endblock %}
+
 {% block scripts %}
 <script>
-const POLL_INTERVAL = 3000;
-let currentSlotId = null;
-
-/* ── Slot click handler ──────────────────────────────────────── */
-function handleSlotClick(slotId, status, slotNum) {
-  currentSlotId = slotId;
-  document.getElementById('modalSlotNum').textContent = slotNum;
-  document.getElementById('modalStatus').textContent  = status.charAt(0).toUpperCase() + status.slice(1);
-
-  const actions = document.getElementById('modalActions');
-  actions.innerHTML = '';
-
-  if(status === 'available') {
-    addModalBtn(actions, '🔴 Mark as Maintenance', 'maintenance', 'btn-danger');
-  } else if(status === 'occupied') {
-    // Checkout option
-    const res = getActiveReservation(slotId);
-    if(res) {
-      const btn = document.createElement('button');
-      btn.className = 'btn-primary';
-      btn.style.width = '100%'; btn.style.justifyContent = 'center';
-      btn.textContent = '✅ Checkout & Generate Bill';
-      btn.onclick = () => doCheckout(res);
-      actions.appendChild(btn);
-    }
-    addModalBtn(actions, '🟢 Mark as Available', 'available', 'btn-success');
-  } else if(status === 'reserved') {
-    addModalBtn(actions, '🚗 Check In Vehicle', 'occupied', 'btn-success');
-    addModalBtn(actions, '🟢 Release (Cancel)', 'available', 'btn-secondary');
-  } else if(status === 'maintenance') {
-    addModalBtn(actions, '🟢 Mark as Available', 'available', 'btn-success');
+// Password match check
+document.getElementById('confPw')?.addEventListener('input', function() {
+  const err = document.getElementById('pwMatchErr');
+  if (this.value && this.value !== document.getElementById('newPw').value) {
+    err.classList.remove('hidden');
+  } else {
+    err.classList.add('hidden');
   }
-
-  document.getElementById('slotModal').style.display = 'flex';
-}
-
-function addModalBtn(container, label, newStatus, cls) {
-  const btn = document.createElement('button');
-  btn.className = cls;
-  btn.style.width = '100%'; btn.style.justifyContent = 'center';
-  btn.textContent = label;
-  btn.onclick = () => changeSlotStatus(currentSlotId, newStatus);
-  container.appendChild(btn);
-}
-
-function closeModal() {
-  document.getElementById('slotModal').style.display = 'none';
-}
-
-/* ── Change slot status via API ──────────────────────────────── */
-async function changeSlotStatus(slotId, newStatus) {
-  try {
-    const res = await fetch(`/vendor/slot/${slotId}/toggle`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    const data = await res.json();
-    if(data.ok) {
-      updateSlotUI(slotId, newStatus);
-      closeModal();
-    }
-  } catch(e) {
-    alert('Error: ' + e.message);
+});
+document.getElementById('pwForm')?.addEventListener('submit', function(e) {
+  if (document.getElementById('newPw').value !== document.getElementById('confPw').value) {
+    e.preventDefault();
+    document.getElementById('pwMatchErr').classList.remove('hidden');
   }
-}
-
-function getActiveReservation(slotId) { return null; } // simplified
-
-async function doCheckout(resId) {
-  const res = await fetch(`/vendor/checkout/${resId}`, { method: 'POST' });
-  const data = await res.json();
-  if(data.ok) {
-    alert(`✅ Checkout done!\nDuration: ${data.duration_mins} min\nAmount: ₹${data.total}${data.is_grace ? ' (Grace - Free!)' : ''}`);
-    closeModal(); location.reload();
-  }
-}
-
-/* ── Update slot card UI ──────────────────────────────────────── */
-const STATUS_COLORS = {
-  available: '#10b981', occupied: '#ef4444', reserved: '#f59e0b', maintenance: '#6b7280'
-};
-function updateSlotUI(slotId, newStatus) {
-  const el  = document.getElementById(`slot-${slotId}`);
-  if(!el) return;
-  el.className = `slot-card slot-${newStatus}`;
-  el.dataset.status = newStatus;
-  const dot  = el.querySelector('div:nth-child(2)');
-  const num  = el.querySelector('div:first-child');
-  const col  = STATUS_COLORS[newStatus] || '#6b7280';
-  if(dot) dot.style.background = col;
-  if(num) num.style.color      = col;
-  el.style.transform = 'scale(1.1)';
-  setTimeout(() => { el.style.transform = ''; }, 350);
-}
-
-/* ── Polling — fetch updated slot statuses every 3s ─────────── */
-{% for lot in lots %}
-{% if lot.status.value == 'active' %}
-(function() {
-  const lotId = '{{ lot.id }}';
-  const pollEl = document.getElementById(`lastPoll-${lotId}`);
-
-  async function poll() {
-    try {
-      const res  = await fetch(`/api/lots/${lotId}/slots`);
-      const data = await res.json();
-      if(data.slots) {
-        data.slots.forEach(slot => {
-          const el = document.getElementById(`slot-${slot.id}`);
-          if(el && el.dataset.status !== slot.status) {
-            el.dataset.status = slot.status;
-            el.className = `slot-card slot-${slot.status}`;
-            updateSlotUI(slot.id, slot.status);
-          }
-        });
-      }
-      if(pollEl) pollEl.textContent = new Date().toLocaleTimeString('en-IN', { hour12: true });
-    } catch(e) {
-      if(pollEl) pollEl.textContent = 'offline';
-    }
-  }
-
-  setInterval(poll, {{ 3000 }});
-})();
-{% endif %}
-{% endfor %}
+});
 </script>
 {% endblock %}

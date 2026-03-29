@@ -1,141 +1,117 @@
 {% extends "base.html" %}
-{% block title %}My Dashboard — ParkSmart India{% endblock %}
+{% block title %}Find Parking — SpotEasy{% endblock %}
 {% block content %}
-<div class="container" style="padding-top:36px;padding-bottom:60px;">
+<div class="mb-6">
+  <h1 class="text-3xl font-bold">Find Parking</h1>
+  <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ lots|length }} active parking lots near you</p>
+</div>
 
-  <!-- Header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
-    <div>
-      <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;background:var(--glow);margin-bottom:8px;">
-        <span class="live-dot"></span>
-        <span style="font-size:11px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;">CUSTOMER PORTAL</span>
-      </div>
-      <h1 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.8rem;color:var(--txt);">Hello, {{ current_user.full_name.split()[0] }}! 👋</h1>
-      <p style="font-size:14px;color:var(--muted);margin-top:4px;">Manage your bookings and passes</p>
-    </div>
-    <a href="{{ url_for('lots_list') }}" class="btn-primary" style="font-size:14px;">🚗 Find Parking</a>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <!-- Leaflet Map -->
+  <div class="bento bg-white dark:bg-slate-900 p-0 overflow-hidden rounded-2xl" style="height:420px;">
+    <div id="map" class="w-full h-full rounded-2xl"></div>
   </div>
 
-  <!-- Stats row -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
-    {% set total = reservations|length %}
-    {% set active_count = reservations|selectattr('status.value','eq','active')|list|length %}
-    {% set completed_count = reservations|selectattr('status.value','eq','completed')|list|length %}
-    {% set grace_saved = reservations|selectattr('is_grace','eq',true)|list|length %}
-    {% for v,l,icon,c in [
-      (total,'Total Bookings','🎫','#6366f1'),
-      (active_count,'Active Pass','📱','#10b981'),
-      (completed_count,'Completed','✅','#f59e0b'),
-      (grace_saved,'Grace Saves','🎁','#0ea5e9'),
-    ] %}
-    <div class="stat-card">
-      <div class="stat-icon" style="background:{{c}}1a;font-size:18px;">{{icon}}</div>
-      <div class="stat-num">{{v}}</div>
-      <div class="stat-label">{{l}}</div>
-    </div>
-    {% endfor %}
-  </div>
+  <!-- Lot Cards -->
+  <div class="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+    {% if lots %}
+      {% for lot in lots %}
+      <div class="bento bg-white dark:bg-slate-900 hover:shadow-xl transition border border-gray-100 dark:border-slate-800">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="font-bold text-lg leading-tight">{{ lot.name }}</h3>
+          <span class="shrink-0 ml-2 text-xs font-bold px-2 py-1 rounded-full
+            {% if lot.available_count > 0 %}bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300
+            {% else %}bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300{% endif %}">
+            {% if lot.available_count > 0 %}{{ lot.available_count }} free{% else %}Full{% endif %}
+          </span>
+        </div>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+          <i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i>{{ lot.address }}, {{ lot.city }}
+        </p>
 
-  <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start;">
-
-    <!-- Bookings table -->
-    <div class="ps-card" style="overflow:hidden;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);">
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:var(--txt);">🕐 My Bookings</div>
-        <a href="{{ url_for('my_bookings') }}" style="font-size:13px;color:var(--accent);">View all →</a>
-      </div>
-      {% if reservations %}
-      <div style="overflow-x:auto;">
-        <table class="ps-table">
-          <thead>
-            <tr>
-              <th>Pass ID</th>
-              <th>Slot</th>
-              <th>Vehicle</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in reservations %}
-            <tr>
-              <td>
-                <a href="{{ url_for('view_pass', res_id=r.id) }}" style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;color:var(--accent);">
-                  PS-{{ r.id[:8]|upper }}
-                </a>
-              </td>
-              <td>
-                <span class="badge badge-blue" style="font-size:11px;">{{ r.slot.slot_number }}</span>
-              </td>
-              <td>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:12px;">{{ r.vehicle_number }}</span>
-              </td>
-              <td>
-                <span class="badge {{'badge-green' if r.status.value=='completed' else 'badge-blue' if r.status.value=='active' else 'badge-yellow' if r.status.value=='pending' else 'badge-red'}}">
-                  {{ r.status.value|upper }}
-                </span>
-              </td>
-              <td>
-                <a href="{{ url_for('view_pass', res_id=r.id) }}" class="btn-success" style="padding:5px 12px;font-size:12px;">View Pass</a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <div style="text-align:center;padding:48px 24px;color:var(--muted);">
-        <div style="font-size:48px;margin-bottom:12px;">🚗</div>
-        <div style="font-size:15px;font-weight:600;color:var(--txt);margin-bottom:6px;">No bookings yet</div>
-        <p style="font-size:13px;margin-bottom:16px;">Find a parking lot and make your first booking!</p>
-        <a href="{{ url_for('lots_list') }}" class="btn-primary">Find Parking →</a>
-      </div>
-      {% endif %}
-    </div>
-
-    <!-- Right sidebar -->
-    <div style="display:flex;flex-direction:column;gap:16px;">
-
-      {% if active_reservation %}
-      <!-- Active pass card -->
-      <div style="border-radius:1.25rem;overflow:hidden;background:linear-gradient(135deg,#10b981,#059669);padding:20px;position:relative;">
-        <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);"></div>
-        <div style="position:relative;z-index:1;">
-          <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;letter-spacing:.08em;margin-bottom:4px;">ACTIVE PASS</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.3rem;color:white;">PS-{{ active_reservation.id[:8]|upper }}</div>
-          <div style="margin-top:12px;space-y:4px;">
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span style="color:rgba(255,255,255,.7);">Slot</span><span style="color:white;font-weight:700;font-family:'JetBrains Mono',monospace;">{{ active_reservation.slot.slot_number }}</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:rgba(255,255,255,.7);">Lot</span><span style="color:white;font-weight:600;">{{ active_reservation.slot.lot.name[:18] }}</span></div>
+        <!-- 2W/4W counts -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl px-3 py-2 flex items-center gap-2">
+            <span class="text-lg">🛵</span>
+            <div>
+              <div class="font-bold text-sm text-amber-700 dark:text-amber-300">
+                {{ lot.slots|selectattr('slot_type','eq','2w')|selectattr('status','eq','available')|list|length }} free
+              </div>
+              <div class="text-xs text-gray-500">2-Wheeler · ₹{{ lot.rate_2w }}/hr</div>
+            </div>
           </div>
-          <a href="{{ url_for('view_pass', res_id=active_reservation.id) }}" style="display:block;text-align:center;margin-top:14px;padding:10px;background:rgba(255,255,255,.2);border-radius:10px;color:white;font-weight:600;font-size:13px;text-decoration:none;">View QR Pass →</a>
+          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl px-3 py-2 flex items-center gap-2">
+            <span class="text-lg">🚗</span>
+            <div>
+              <div class="font-bold text-sm text-blue-700 dark:text-blue-300">
+                {{ lot.slots|selectattr('slot_type','eq','4w')|selectattr('status','eq','available')|list|length }} free
+              </div>
+              <div class="text-xs text-gray-500">4-Wheeler · ₹{{ lot.rate_4w }}/hr</div>
+            </div>
+          </div>
         </div>
-      </div>
-      {% endif %}
 
-      <!-- Quick links -->
-      <div class="ps-card" style="padding:20px;">
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--txt);margin-bottom:14px;">⚡ Quick Actions</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          {% for href, icon, label in [
-            (url_for('lots_list'),'🔍','Find Parking Lots'),
-            (url_for('my_bookings'),'📋','All My Bookings'),
-          ] %}
-          <a href="{{href}}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);color:var(--txt);font-size:13px;font-weight:500;transition:border-color .2s,color .2s;"
-             onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-             onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--txt)'">
-            <span>{{icon}}</span> {{label}} <span style="margin-left:auto;color:var(--muted);">→</span>
+        <!-- Progress bar -->
+        <div class="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-1.5 mb-4">
+          {% set pct = (lot.available_count / lot.total_slots * 100)|round|int if lot.total_slots > 0 else 0 %}
+          <div class="bg-emerald-500 h-1.5 rounded-full transition-all" style="width:{{ pct }}%"></div>
+        </div>
+
+        {% if current_user.is_authenticated and current_user.role == 'customer' %}
+          {% if lot.available_count > 0 %}
+          <a href="{{ url_for('book_slot', lid=lot.id) }}"
+             class="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-3 rounded-xl transition">
+            Book Now →
           </a>
-          {% endfor %}
-        </div>
+          {% else %}
+          <button disabled class="block w-full text-center bg-gray-200 dark:bg-slate-700 text-gray-500 text-sm font-semibold py-3 rounded-xl cursor-not-allowed">
+            Lot Full
+          </button>
+          {% endif %}
+        {% elif not current_user.is_authenticated %}
+        <a href="{{ url_for('login') }}" class="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-3 rounded-xl transition">
+          Login to Book →
+        </a>
+        {% endif %}
       </div>
-
-      <!-- Info card -->
-      <div class="ps-card" style="padding:20px;background:var(--glow);border-color:rgba(16,185,129,.2);">
-        <div style="font-size:24px;margin-bottom:8px;">🎁</div>
-        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;color:var(--txt);margin-bottom:4px;">15-Min Grace Period!</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.6;">Park for under 15 minutes? You pay ₹0. First 15 minutes are completely free.</div>
-      </div>
+      {% endfor %}
+    {% else %}
+    <div class="text-center py-16 text-gray-400">
+      <i data-lucide="map-pin-off" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+      <p class="font-medium">No active parking lots yet.</p>
     </div>
+    {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const lotsData = {{ lots_json | tojson | safe }};
+const map = L.map('map').setView([22.9734, 78.6569], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {attribution:'© OpenStreetMap contributors'}).addTo(map);
+
+if (lotsData.length > 0) {
+  const bounds = [];
+  lotsData.forEach(lot => {
+    const color = lot.available > 0 ? '#10b981' : '#ef4444';
+    L.circleMarker([lot.lat, lot.lng], {
+      radius:13, fillColor:color, color:'#fff', weight:2, fillOpacity:0.9
+    }).addTo(map)
+      .bindPopup(`<b>${lot.name}</b><br>${lot.city}<br>🟢 ${lot.available} free of ${lot.total}`);
+    bounds.push([lot.lat, lot.lng]);
+  });
+  if (bounds.length) map.fitBounds(bounds, {padding:[50,50]});
+}
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(p => {
+    L.marker([p.coords.latitude, p.coords.longitude])
+      .addTo(map).bindPopup('📍 You are here').openPopup();
+    map.setView([p.coords.latitude, p.coords.longitude], 13);
+  });
+}
+</script>
 {% endblock %}

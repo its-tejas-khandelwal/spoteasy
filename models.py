@@ -1,96 +1,153 @@
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
-import secrets
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — SpotEasy{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-center justify-between gap-4 mb-8 animate-fade-in">
+  <div>
+    <h1 class="text-3xl font-black text-gray-900 dark:text-white">Admin Dashboard</h1>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Platform management & analytics</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{{ url_for('admin_notify') }}" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all hover:scale-105">
+      <i data-lucide="bell" class="w-4 h-4"></i> Notify
+    </a>
+    <a href="{{ url_for('admin_db_view') }}" class="inline-flex items-center gap-2 bg-slate-800 dark:bg-slate-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-700 dark:hover:bg-slate-600 transition-all hover:scale-105">
+      <i data-lucide="database" class="w-4 h-4"></i> View DB
+    </a>
+  </div>
+</div>
 
-db = SQLAlchemy()
+<!-- Stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
+  {% for label,val,icon,grad in [
+    ('Total Vendors',   vendors|length,   'building-2',   'from-blue-500 to-indigo-600'),
+    ('Total Customers', customers|length, 'users',        'from-green-500 to-emerald-600'),
+    ('Total Lots',      lots|length,      'map-pin',      'from-purple-500 to-pink-600'),
+    ('Active Lots',     lots|selectattr("is_active")|list|length, 'check-circle-2', 'from-teal-500 to-cyan-600'),
+  ] %}
+  <div class="card group hover:shadow-xl">
+    <div class="flex items-center justify-between mb-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br {{ grad }} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+        <i data-lucide="{{ icon }}" class="w-5 h-5 text-white"></i>
+      </div>
+    </div>
+    <div class="text-3xl font-black text-gray-900 dark:text-white">{{ val }}</div>
+    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
 
-class User(UserMixin, db.Model):
-    __tablename__ = 'users'
-    id            = db.Column(db.Integer, primary_key=True)
-    name          = db.Column(db.String(100), nullable=False)
-    email         = db.Column(db.String(150), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    role          = db.Column(db.String(20), nullable=False, default='customer')
-    phone         = db.Column(db.String(15))
-    is_approved   = db.Column(db.Boolean, default=True)
-    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
-    fcm_token     = db.Column(db.String(512))   # Firebase push token
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <!-- Vendor Approvals -->
+  <div class="card animate-on-scroll">
+    <h2 class="font-black text-lg mb-5 flex items-center gap-2 text-gray-900 dark:text-white">
+      <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+        <i data-lucide="user-check" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+      </div>
+      Vendors
+    </h2>
+    {% if vendors %}
+    <div class="space-y-3">
+      {% for v in vendors %}
+      <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+            {{ v.name[0].upper() }}
+          </div>
+          <div>
+            <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ v.name }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ v.email }}</p>
+          </div>
+        </div>
+        {% if not v.is_approved %}
+        <form method="POST" action="{{ url_for('approve_vendor', uid=v.id) }}">
+          <button class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all hover:scale-105">Approve ✓</button>
+        </form>
+        {% else %}
+        <span class="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs font-bold px-3 py-1.5 rounded-xl">Approved ✓</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-400 text-sm text-center py-8">No vendors yet.</p>
+    {% endif %}
+  </div>
 
-    lots         = db.relationship('ParkingLot', backref='owner', lazy=True, cascade='all, delete-orphan')
-    reservations = db.relationship('Reservation', backref='customer', lazy=True, cascade='all, delete-orphan')
+  <!-- Lot Approvals -->
+  <div class="card animate-on-scroll">
+    <h2 class="font-black text-lg mb-5 flex items-center gap-2 text-gray-900 dark:text-white">
+      <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+        <i data-lucide="map-pin" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+      </div>
+      Parking Lots
+    </h2>
+    {% if lots %}
+    <div class="space-y-3">
+      {% for lot in lots %}
+      <div class="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-dark-800 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors">
+        <div>
+          <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ lot.name }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ lot.city }} · {{ lot.total_slots }} slots · {{ lot.owner.name }}</p>
+        </div>
+        {% if not lot.is_active %}
+        <form method="POST" action="{{ url_for('approve_lot', lid=lot.id) }}">
+          <button class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all hover:scale-105">Go Live ✓</button>
+        </form>
+        {% else %}
+        <span class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold px-3 py-1.5 rounded-xl">Live ✓</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-400 text-sm text-center py-8">No lots yet.</p>
+    {% endif %}
+  </div>
+</div>
 
-    def set_password(self, pw):
-        self.password_hash = generate_password_hash(pw)
-
-    def check_password(self, pw):
-        return check_password_hash(self.password_hash, pw)
-
-    def to_dict(self):
-        return {'id': self.id, 'name': self.name, 'email': self.email, 'role': self.role}
-
-
-class ParkingLot(db.Model):
-    __tablename__ = 'parking_lots'
-    id          = db.Column(db.Integer, primary_key=True)
-    owner_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    name        = db.Column(db.String(150), nullable=False)
-    address     = db.Column(db.String(300), nullable=False)
-    city        = db.Column(db.String(100), nullable=False)
-    latitude    = db.Column(db.Float, nullable=False)
-    longitude   = db.Column(db.Float, nullable=False)
-    total_slots = db.Column(db.Integer, nullable=False)
-    rate_2w     = db.Column(db.Numeric(8, 2), nullable=False)
-    rate_4w     = db.Column(db.Numeric(8, 2), nullable=False)
-    is_active   = db.Column(db.Boolean, default=False)
-    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
-
-    slots = db.relationship('ParkingSlot', backref='lot', lazy=True, cascade='all, delete-orphan')
-
-    @property
-    def available_count(self):
-        return sum(1 for s in self.slots if s.status == 'available')
-
-    @property
-    def occupied_count(self):
-        return sum(1 for s in self.slots if s.status == 'occupied')
-
-    def to_dict(self):
-        return {
-            'id': self.id, 'name': self.name, 'address': self.address,
-            'city': self.city, 'lat': self.latitude, 'lng': self.longitude,
-            'total': self.total_slots, 'available': self.available_count,
-            'occupied': self.occupied_count,
-            'rate_2w': float(self.rate_2w), 'rate_4w': float(self.rate_4w),
-        }
-
-
-class ParkingSlot(db.Model):
-    __tablename__ = 'parking_slots'
-    id        = db.Column(db.Integer, primary_key=True)
-    lot_id    = db.Column(db.Integer, db.ForeignKey('parking_lots.id'), nullable=False)
-    label     = db.Column(db.String(10), nullable=False)
-    status    = db.Column(db.String(20), nullable=False, default='available')
-    slot_type = db.Column(db.String(5), default='4w')
-
-    reservations = db.relationship('Reservation', backref='slot', lazy=True)
-
-    def to_dict(self):
-        return {'id': self.id, 'label': self.label, 'status': self.status, 'type': self.slot_type}
-
-
-class Reservation(db.Model):
-    __tablename__ = 'reservations'
-    id             = db.Column(db.Integer, primary_key=True)
-    customer_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    slot_id        = db.Column(db.Integer, db.ForeignKey('parking_slots.id'), nullable=False)
-    vehicle_no     = db.Column(db.String(20), nullable=False)
-    vehicle_type   = db.Column(db.String(5), nullable=False)
-    entry_time     = db.Column(db.DateTime, default=datetime.utcnow)
-    exit_time      = db.Column(db.DateTime)
-    amount_paid    = db.Column(db.Numeric(10, 2), default=0)
-    status         = db.Column(db.String(20), default='active')
-    qr_token       = db.Column(db.String(64), unique=True, default=lambda: secrets.token_hex(32))
-    payment_method = db.Column(db.String(20), default='cash')
-    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+<!-- Recent Bookings -->
+<div class="card animate-on-scroll">
+  <h2 class="font-black text-lg mb-5 flex items-center gap-2 text-gray-900 dark:text-white">
+    <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+      <i data-lucide="list" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+    </div>
+    Recent Bookings
+  </h2>
+  {% if reservations %}
+  <div class="overflow-x-auto -mx-2">
+    <table class="w-full text-sm min-w-[600px]">
+      <thead>
+        <tr class="text-left text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-dark-700">
+          <th class="pb-3 pl-2 font-semibold">Customer</th>
+          <th class="pb-3 font-semibold">Vehicle</th>
+          <th class="pb-3 font-semibold">Lot / Slot</th>
+          <th class="pb-3 font-semibold">Entry (IST)</th>
+          <th class="pb-3 font-semibold">Status</th>
+          <th class="pb-3 font-semibold">Amount</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50 dark:divide-dark-800">
+        {% for r in reservations %}
+        <tr class="hover:bg-gray-50 dark:hover:bg-dark-800 transition-colors">
+          <td class="py-3 pl-2 font-semibold text-gray-900 dark:text-white">{{ r.customer.name }}</td>
+          <td class="py-3 text-gray-500 dark:text-gray-400">{{ r.vehicle_no }}<br/><span class="text-xs">{{ '🛵' if r.vehicle_type=='2w' else '🚗' }}</span></td>
+          <td class="py-3 text-gray-600 dark:text-gray-300">{{ r.slot.lot.name[:20] }}<br/><span class="text-xs text-gray-400">{{ r.slot.label }}</span></td>
+          <td class="py-3 text-xs text-gray-500 dark:text-gray-400">{{ r.entry_time.strftime('%d %b %I:%M %p') }}</td>
+          <td class="py-3">
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold
+              {% if r.status=='active' %}bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300
+              {% else %}bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-gray-400{% endif %}">
+              {{ '🟢' if r.status=='active' else '✅' }} {{ r.status }}
+            </span>
+          </td>
+          <td class="py-3 font-bold text-gray-900 dark:text-white">{% if r.amount_paid %}₹{{ r.amount_paid }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-gray-400 text-sm text-center py-8">No bookings yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
