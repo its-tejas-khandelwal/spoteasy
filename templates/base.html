@@ -274,6 +274,38 @@ window.addEventListener('appinstalled',dismissInstall);
 if(!isStandalone&&!localStorage.getItem('se_installed')&&!localStorage.getItem('se_hide')){setTimeout(function(){document.getElementById('installBanner').style.display='block';},3500);}
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}
+  // Theme toggle
+function toggleTheme(){
+  var r=document.documentElement;
+  var isDark=r.style.getPropertyValue('--bg-primary')==='#F8FAFC'?false:true;
+  if(isDark){
+    r.style.setProperty('--bg-primary','#F8FAFC');
+    r.style.setProperty('--bg-secondary','#FFFFFF');
+    r.style.setProperty('--bg-tertiary','#F1F5F9');
+    r.style.setProperty('--text-primary','#0F172A');
+    r.style.setProperty('--text-secondary','#475569');
+    r.style.setProperty('--text-muted','#94A3B8');
+    r.style.setProperty('--border-subtle','rgba(0,0,0,0.08)');
+    r.style.setProperty('--border-medium','rgba(0,0,0,0.12)');
+    document.getElementById('themeToggle').textContent='☀️';
+    localStorage.setItem('theme','light');
+  } else {
+    r.style.setProperty('--bg-primary','#06080F');
+    r.style.setProperty('--bg-secondary','#0D1117');
+    r.style.setProperty('--bg-tertiary','#161B22');
+    r.style.setProperty('--text-primary','#F0F6FC');
+    r.style.setProperty('--text-secondary','#8B949E');
+    r.style.setProperty('--text-muted','#484F58');
+    r.style.setProperty('--border-subtle','rgba(255,255,255,0.07)');
+    r.style.setProperty('--border-medium','rgba(255,255,255,0.12)');
+    document.getElementById('themeToggle').textContent='🌙';
+    localStorage.setItem('theme','dark');
+  }
+}
+// Apply saved theme on load
+(function(){
+  if(localStorage.getItem('theme')==='light') toggleTheme();
+})();
 </script>
 {% block scripts %}{% endblock %}
 </body>
