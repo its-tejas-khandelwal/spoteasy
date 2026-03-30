@@ -1,11 +1,2 @@
-.env
-__pycache__/
-*.pyc
-*.pyo
-*.db
-venv/
-.venv/
-*.egg-info/
-dist/
-build/
-.DS_Store
+[deploy]
+startCommand = "gunicorn app:app --workers 2 --bind 0.0.0.0:8080 --timeout 120"
