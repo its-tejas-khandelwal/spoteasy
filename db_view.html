@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Add Parking Lot — SpotEasy{% endblock %}
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+  <div style="margin-bottom:24px;" class="anim-item visible">
+    <a href="{{ url_for('vendor_dashboard') }}" style="color:var(--text-secondary);text-decoration:none;font-size:13px;">← Back to Dashboard</a>
+    <h1 class="syne" style="font-size:24px;font-weight:700;margin-top:10px;">Add Parking Lot</h1>
+    <p style="color:var(--text-secondary);font-size:14px;margin-top:4px;">Fill in details and click a location on the map.</p>
+  </div>
+  <form method="post" class="glass-card anim-item visible" style="padding:28px;">
+    <!-- Basic Info -->
+    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;">Basic Info</div>
+    <div style="margin-bottom:14px;">
+      <label class="label-text">Lot Name *</label>
+      <input type="text" name="name" class="inp" placeholder="City Centre Parking" required/>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label class="label-text">Address *</label>
+      <input type="text" name="address" class="inp" placeholder="15, MG Road, Near Metro Station" required/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+      <div>
+        <label class="label-text">City *</label>
+        <input type="text" name="city" class="inp" placeholder="Lucknow" required/>
+      </div>
+      <div>
+        <label class="label-text">State</label>
+        <input type="text" name="state" class="inp" placeholder="Uttar Pradesh"/>
+      </div>
+    </div>
+    <!-- Capacity -->
+    <div style="height:1px;background:var(--border-subtle);margin-bottom:20px;"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;">Capacity & Pricing</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+      <div>
+        <label class="label-text">2-Wheeler Slots</label>
+        <input type="number" name="slots_2w" class="inp" placeholder="10" min="0" value="0"/>
+      </div>
+      <div>
+        <label class="label-text">4-Wheeler Slots</label>
+        <input type="number" name="slots_4w" class="inp" placeholder="20" min="0" value="0"/>
+      </div>
+      <div>
+        <label class="label-text">Rate 2W (₹/hr) *</label>
+        <input type="number" name="rate_2w" class="inp" placeholder="20" min="1" step="0.5" required/>
+      </div>
+      <div>
+        <label class="label-text">Rate 4W (₹/hr) *</label>
+        <input type="number" name="rate_4w" class="inp" placeholder="50" min="1" step="0.5" required/>
+      </div>
+    </div>
+    <!-- Location -->
+    <div style="height:1px;background:var(--border-subtle);margin-bottom:20px;"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Location — Click map to pin *</div>
+    <div style="border-radius:12px;overflow:hidden;border:1px solid var(--border-medium);height:260px;margin-bottom:12px;">
+      <div id="addMap" style="width:100%;height:100%;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+      <div>
+        <label class="label-text">Latitude</label>
+        <input type="text" name="latitude" id="latInp" class="inp mono" placeholder="26.8467" required readonly/>
+      </div>
+      <div>
+        <label class="label-text">Longitude</label>
+        <input type="text" name="longitude" id="lngInp" class="inp mono" placeholder="80.9462" required readonly/>
+      </div>
+    </div>
+    <button type="button" onclick="useMyLoc()" class="btn-secondary" style="width:100%;justify-content:center;margin-bottom:20px;">📍 Use My Location</button>
+    <button type="submit" class="btn-primary" style="width:100%;justify-content:center;padding:13px;font-size:15px;">Add Parking Lot</button>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>#addMap .leaflet-tile{filter:invert(1) hue-rotate(180deg) brightness(0.8);}</style>
+<script>
+var amap=L.map('addMap').setView([20.5937,78.9629],5);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(amap);
+var marker=null;
+amap.on('click',function(e){
+  if(marker)amap.removeLayer(marker);
+  marker=L.marker([e.latlng.lat,e.latlng.lng]).addTo(amap);
+  document.getElementById('latInp').value=e.latlng.lat.toFixed(6);
+  document.getElementById('lngInp').value=e.latlng.lng.toFixed(6);
+});
+function useMyLoc(){
+  if(!navigator.geolocation)return alert('Geolocation not supported');
+  navigator.geolocation.getCurrentPosition(function(p){
+    var ll=[p.coords.latitude,p.coords.longitude];
+    if(marker)amap.removeLayer(marker);
+    marker=L.marker(ll).addTo(amap);
+    amap.setView(ll,16);
+    document.getElementById('latInp').value=p.coords.latitude.toFixed(6);
+    document.getElementById('lngInp').value=p.coords.longitude.toFixed(6);
+  });
+}
+</script>
+{% endblock %}

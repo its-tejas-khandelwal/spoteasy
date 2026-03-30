@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Send Notification — SpotEasy Admin{% endblock %}
+{% block content %}
+<div style="max-width:560px;margin:0 auto;">
+  <div style="margin-bottom:20px;" class="anim-item visible">
+    <a href="{{ url_for('admin_dashboard') }}" style="color:var(--text-secondary);text-decoration:none;font-size:13px;">← Back</a>
+    <h1 class="syne" style="font-size:22px;font-weight:700;margin-top:10px;">📧 Send Email Notification</h1>
+    <p style="color:var(--text-secondary);font-size:13px;margin-top:4px;">Send email notifications to users via SMTP.</p>
+  </div>
+  <div class="glass-card anim-item visible" style="padding:28px;">
+    <form method="post">
+      <div style="margin-bottom:14px;">
+        <label class="label-text">Recipient</label>
+        <select name="user_id" class="inp">
+          <option value="all">Everyone ({{ all_users|length }} users)</option>
+          {% for u in all_users %}
+          <option value="{{ u.id }}">{{ u.name }} — {{ u.email }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="label-text">Subject / Title</label>
+        <input type="text" name="title" class="inp" placeholder="Important update from SpotEasy" required/>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label class="label-text">Message Body</label>
+        <textarea name="body" class="inp" rows="5" placeholder="Write your message here..." required style="resize:vertical;"></textarea>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;">Send Notification</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

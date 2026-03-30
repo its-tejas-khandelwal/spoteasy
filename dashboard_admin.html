@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}500 — Server Error{% endblock %}
+{% block content %}
+<div style="text-align:center;padding:80px 20px;">
+  <div style="font-size:80px;margin-bottom:16px;">⚠️</div>
+  <h1 class="syne" style="font-size:48px;font-weight:800;margin-bottom:8px;color:#F43F5E;">500</h1>
+  <p style="color:var(--text-secondary);font-size:18px;margin-bottom:28px;">Something went wrong on our end.</p>
+  <a href="{{ url_for('index') }}" class="btn-primary">← Back to Home</a>
+</div>
+{% endblock %}

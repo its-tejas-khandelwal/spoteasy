@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Find Parking — SpotEasy{% endblock %}
+{% block content %}
+<div style="margin-bottom:24px;" class="anim-item visible">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+    <h1 class="syne" style="font-size:26px;font-weight:700;">Find Parking</h1>
+    <span class="badge badge-green"><span class="pulse-dot pulse-green"></span>Live</span>
+  </div>
+  <p style="color:var(--text-secondary);font-size:14px;">{{ lots|length }} active lot{{ 's' if lots|length != 1 }} available now</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr;gap:20px;" id="mainGrid">
+  <!-- Map -->
+  <div class="glass-card" style="padding:0;overflow:hidden;height:300px;border-radius:14px;">
+    <div id="map" style="width:100%;height:100%;"></div>
+  </div>
+
+  <!-- Lot cards -->
+  <div style="display:flex;flex-direction:column;gap:14px;">
+    {% if lots %}
+      {% for lot in lots %}
+      {% set avail_2w = lot.slots|selectattr('slot_type','eq','2w')|selectattr('status','eq','available')|list|length %}
+      {% set avail_4w = lot.slots|selectattr('slot_type','eq','4w')|selectattr('status','eq','available')|list|length %}
+      {% set pct = (lot.available_count / lot.total_slots * 100)|round|int if lot.total_slots > 0 else 0 %}
+      <div class="glass-card glass-card-hover anim-item visible" style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:8px;">
+          <div style="min-width:0;">
+            <h3 class="syne" style="font-size:16px;font-weight:700;margin-bottom:4px;color:var(--text-primary);">{{ lot.name }}</h3>
+            <p style="font-size:12px;color:var(--text-secondary);">📍 {{ lot.address }}, {{ lot.city }}</p>
+          </div>
+          <span class="badge {% if lot.available_count > 0 %}badge-green{% else %}badge-red{% endif %}" style="flex-shrink:0;">
+            {% if lot.available_count > 0 %}{{ lot.available_count }} free{% else %}Full{% endif %}
+          </span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:20px;">🛵</span>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#F59E0B;">{{ avail_2w }} free</div>
+              <div style="font-size:11px;color:var(--text-muted);">2-Wheeler · ₹{{ lot.rate_2w }}/hr</div>
+            </div>
+          </div>
+          <div style="background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:20px;">🚗</span>
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#22D3EE;">{{ avail_4w }} free</div>
+              <div style="font-size:11px;color:var(--text-muted);">4-Wheeler · ₹{{ lot.rate_4w }}/hr</div>
+            </div>
+          </div>
+        </div>
+        <div class="occ-bar" style="margin-bottom:14px;">
+          <div class="occ-fill" style="width:{{ pct }}%;background:{% if pct > 70 %}#10B981{% elif pct > 30 %}#F59E0B{% else %}#F43F5E{% endif %};"></div>
+        </div>
+        {% if current_user.is_authenticated and current_user.role == 'customer' %}
+          {% if lot.available_count > 0 %}
+          <a href="{{ url_for('book_slot', lid=lot.id) }}" class="btn-primary" style="width:100%;justify-content:center;padding:11px;">Book Now →</a>
+          {% else %}
+          <button disabled style="width:100%;padding:11px;border-radius:10px;background:rgba(128,128,128,0.08);border:1px solid var(--border-subtle);color:var(--text-muted);font-size:14px;cursor:not-allowed;">Lot Full</button>
+          {% endif %}
+        {% elif not current_user.is_authenticated %}
+        <a href="{{ url_for('login') }}" class="btn-primary" style="width:100%;justify-content:center;padding:11px;">Login to Book →</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="glass-card" style="padding:48px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">🏗️</div>
+      <h3 class="syne" style="font-size:18px;font-weight:600;margin-bottom:8px;color:var(--text-primary);">No lots yet</h3>
+      <p style="color:var(--text-secondary);font-size:14px;">Parking lots will appear here once approved by admin.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+@media(min-width:900px){
+  #mainGrid{grid-template-columns:1fr 1fr;}
+  #mainGrid>:first-child{height:calc(100vh - 160px);max-height:600px;position:sticky;top:80px;}
+  #mainGrid>:last-child{max-height:600px;overflow-y:auto;padding-right:2px;}
+  #mainGrid>:last-child::-webkit-scrollbar{width:3px;}
+  #mainGrid>:last-child::-webkit-scrollbar-thumb{background:rgba(99,102,241,0.3);border-radius:99px;}
+}
+</style>
+<script>
+var lotsData={{ lots_json|tojson|safe }};
+
+// Dark map tiles
+var darkTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CartoDB'});
+var lightTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© CartoDB'});
+
+var map=L.map('map',{zoomControl:true,attributionControl:false}).setView([22.9734,78.6569],5);
+
+// Use correct tile layer based on current theme
+function updateMapTheme(){
+  var isLight=document.body.classList.contains('light');
+  if(isLight){map.removeLayer(darkTiles);lightTiles.addTo(map);}
+  else{map.removeLayer(lightTiles);darkTiles.addTo(map);}
+}
+darkTiles.addTo(map);
+
+// Watch for theme changes
+var origToggle=window.toggleTheme;
+window.toggleTheme=function(){origToggle();setTimeout(updateMapTheme,50);};
+setTimeout(updateMapTheme,100);
+
+function makeIcon(avail){
+  var c=avail>0?'#10B981':'#F43F5E';
+  return L.divIcon({html:'<div style="width:22px;height:22px;border-radius:50%;background:'+c+';border:3px solid rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div>',iconSize:[22,22],iconAnchor:[11,11],className:''});
+}
+if(lotsData.length>0){
+  var bounds=[];
+  lotsData.forEach(function(lot){
+    var m=L.marker([lot.lat,lot.lng],{icon:makeIcon(lot.available)}).addTo(map);
+    m.bindPopup('<div style="font-family:DM Sans,sans-serif;padding:4px;min-width:150px;"><div style="font-weight:700;font-size:14px;margin-bottom:4px;">'+lot.name+'</div><div style="font-size:12px;color:#666;margin-bottom:8px;">'+lot.city+'</div><div style="font-size:13px;font-weight:600;color:'+(lot.available>0?'#10B981':'#F43F5E')+'">'+lot.available+' / '+lot.total+' free</div></div>');
+    bounds.push([lot.lat,lot.lng]);
+  });
+  if(bounds.length)map.fitBounds(bounds,{padding:[40,40]});
+}
+if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(function(p){
+    L.circleMarker([p.coords.latitude,p.coords.longitude],{radius:8,fillColor:'#6366F1',color:'#fff',weight:2,fillOpacity:0.9}).addTo(map).bindPopup('📍 You').openPopup();
+    if(lotsData.length===0)map.setView([p.coords.latitude,p.coords.longitude],13);
+  });
+}
+</script>
+{% endblock %}

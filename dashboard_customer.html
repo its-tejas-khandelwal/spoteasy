@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Scan Result — SpotEasy{% endblock %}
+{% block content %}
+<div style="max-width:420px;margin:40px auto;text-align:center;">
+  <div class="glass-card" style="padding:32px;">
+    <div style="font-size:64px;margin-bottom:16px;">📱</div>
+    <h1 class="syne" style="font-size:22px;font-weight:700;margin-bottom:8px;">QR Scan Result</h1>
+    <p style="color:var(--text-secondary);font-size:14px;">Scan result will appear here.</p>
+    <a href="{{ url_for('vendor_dashboard') }}" class="btn-secondary" style="margin-top:20px;">← Dashboard</a>
+  </div>
+</div>
+{% endblock %}

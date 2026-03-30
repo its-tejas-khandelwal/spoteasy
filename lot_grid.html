@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — SpotEasy{% endblock %}
+{% block content %}
+{% set pending_vendors = vendors|selectattr('is_approved','eq',false)|list %}
+{% set pending_lots = lots|selectattr('is_active','eq',false)|list %}
+{% set active_res = reservations|selectattr('status','eq','active')|list %}
+{% set total_rev = reservations|selectattr('status','eq','completed')|sum(attribute='amount_paid') %}
+
+<div style="margin-bottom:24px;" class="anim-item visible">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+    <h1 class="syne" style="font-size:24px;font-weight:700;">⚙️ Admin Control Center</h1>
+    {% if pending_vendors %}
+    <span class="badge badge-amber"><span class="pulse-dot pulse-amber"></span>{{ pending_vendors|length }} pending</span>
+    {% endif %}
+  </div>
+  <p style="color:var(--text-secondary);font-size:14px;">SpotEasy platform management</p>
+</div>
+
+<!-- Stats bento -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px;">
+  {% for val, label, color in [
+    (vendors|length, 'Total Vendors', '#818CF8'),
+    (customers|length, 'Customers', '#22D3EE'),
+    (lots|length, 'Total Lots', '#10B981'),
+    (active_res|length, 'Active Now', '#F59E0B'),
+    (reservations|length, 'All Bookings', '#6366F1'),
+    ('₹'~total_rev|int, 'Revenue', '#F43F5E'),
+  ] %}
+  <div class="glass-card anim-item" style="padding:18px;text-align:center;">
+    <div class="syne" style="font-size:22px;font-weight:800;color:{{ color }};">{{ val }}</div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pending vendors -->
+{% if pending_vendors %}
+<div style="margin-bottom:24px;">
+  <h2 class="syne" style="font-size:17px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+    ⏳ Pending Vendor Approvals
+    <span class="badge badge-amber">{{ pending_vendors|length }}</span>
+  </h2>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    {% for v in pending_vendors %}
+    <div class="glass-card" style="padding:16px 20px;border-color:rgba(245,158,11,0.3);">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-weight:600;font-size:15px;margin-bottom:2px;">{{ v.name }}</div>
+          <div style="font-size:12px;color:var(--text-secondary);">{{ v.email }} {% if v.phone %}· {{ v.phone }}{% endif %}</div>
+        </div>
+        <form method="post" action="{{ url_for('approve_vendor', uid=v.id) }}">
+          <button type="submit" class="btn-primary btn-sm" style="background:linear-gradient(135deg,#10B981,#059669);">✅ Approve</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Pending lots -->
+{% if pending_lots %}
+<div style="margin-bottom:24px;">
+  <h2 class="syne" style="font-size:17px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+    🏗️ Pending Lot Approvals
+    <span class="badge badge-amber">{{ pending_lots|length }}</span>
+  </h2>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    {% for lot in pending_lots %}
+    <div class="glass-card" style="padding:16px 20px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-weight:600;font-size:15px;margin-bottom:2px;">{{ lot.name }}</div>
+          <div style="font-size:12px;color:var(--text-secondary);">{{ lot.city }} · {{ lot.total_slots }} slots · Owner: {{ lot.owner.name }}</div>
+        </div>
+        <form method="post" action="{{ url_for('approve_lot', lid=lot.id) }}">
+          <button type="submit" class="btn-primary btn-sm">✅ Approve Lot</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Active bookings -->
+{% if active_res %}
+<div style="margin-bottom:24px;">
+  <h2 class="syne" style="font-size:17px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+    🟢 Active Bookings <span class="badge badge-green">{{ active_res|length }}</span>
+  </h2>
+  <div class="glass-card" style="overflow:hidden;">
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr>
+          <th>Customer</th><th>Lot</th><th>Slot</th><th>Vehicle</th><th>Entry (IST)</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for r in active_res[:10] %}
+        <tr>
+          <td style="font-weight:500;">{{ r.customer.name }}</td>
+          <td>{{ r.slot.lot.name }}</td>
+          <td><span class="mono" style="font-size:12px;">{{ r.slot.label }}</span></td>
+          <td><span class="mono" style="font-size:12px;">{{ r.vehicle_no }}</span></td>
+          <td style="color:var(--text-secondary);font-size:12px;">{{ to_ist(r.entry_time).strftime('%d %b, %I:%M %p') }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_delete_reservation', rid=r.id) }}" onsubmit="return confirm('Force-end this booking?')">
+              <button type="submit" class="btn-danger btn-sm">End</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- All data tables tabs -->
+<div style="margin-bottom:28px;">
+  <div style="display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap;">
+    {% for tab in ['Users','Vendors','Lots','Reservations'] %}
+    <button onclick="showTab('{{ tab.lower() }}')" id="tab-{{ tab.lower() }}"
+      style="padding:7px 16px;border-radius:8px;border:1px solid var(--border-medium);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;{% if loop.first %}background:rgba(99,102,241,0.2);color:#818CF8;border-color:rgba(99,102,241,0.4);{% else %}background:none;color:var(--text-secondary);{% endif %}">
+      {{ tab }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <!-- Users -->
+  <div id="panel-users" class="glass-card" style="overflow:hidden;">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <span class="syne" style="font-weight:600;">Users ({{ customers|length }})</span>
+      <a href="{{ url_for('export_csv', table='users') }}" class="btn-secondary btn-sm">⬇️ Export CSV</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for u in customers %}
+        <tr>
+          <td style="font-weight:500;">{{ u.name }}</td>
+          <td style="color:var(--text-secondary);font-size:12px;">{{ u.email }}</td>
+          <td style="color:var(--text-secondary);font-size:12px;">{{ u.phone or '—' }}</td>
+          <td style="color:var(--text-muted);font-size:11px;">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_delete_user', uid=u.id) }}" onsubmit="return confirm('Delete user {{ u.name }}? This cannot be undone.')">
+              <button type="submit" class="btn-danger btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Vendors -->
+  <div id="panel-vendors" class="glass-card" style="display:none;overflow:hidden;">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border-subtle);">
+      <span class="syne" style="font-weight:600;">Vendors ({{ vendors|length }})</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for v in vendors %}
+        <tr>
+          <td style="font-weight:500;">{{ v.name }}</td>
+          <td style="color:var(--text-secondary);font-size:12px;">{{ v.email }}</td>
+          <td><span class="badge {% if v.is_approved %}badge-green{% else %}badge-amber{% endif %}">{% if v.is_approved %}Approved{% else %}Pending{% endif %}</span></td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap;">
+            {% if not v.is_approved %}
+            <form method="post" action="{{ url_for('approve_vendor', uid=v.id) }}"><button type="submit" class="btn-primary btn-sm" style="background:linear-gradient(135deg,#10B981,#059669);">Approve</button></form>
+            {% endif %}
+            <form method="post" action="{{ url_for('admin_delete_user', uid=v.id) }}" onsubmit="return confirm('Delete vendor {{ v.name }}?')">
+              <button type="submit" class="btn-danger btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Lots -->
+  <div id="panel-lots" class="glass-card" style="display:none;overflow:hidden;">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <span class="syne" style="font-weight:600;">Lots ({{ lots|length }})</span>
+      <a href="{{ url_for('export_csv', table='lots') }}" class="btn-secondary btn-sm">⬇️ Export CSV</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>City</th><th>Owner</th><th>Slots</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for lot in lots %}
+        <tr>
+          <td style="font-weight:500;">{{ lot.name }}</td>
+          <td style="color:var(--text-secondary);font-size:12px;">{{ lot.city }}</td>
+          <td style="color:var(--text-secondary);font-size:12px;">{{ lot.owner.name }}</td>
+          <td><span style="color:#10B981;font-weight:600;">{{ lot.available_count }}</span><span style="color:var(--text-muted);">/{{ lot.total_slots }}</span></td>
+          <td><span class="badge {% if lot.is_active %}badge-green{% else %}badge-amber{% endif %}">{% if lot.is_active %}Active{% else %}Pending{% endif %}</span></td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap;">
+            {% if not lot.is_active %}
+            <form method="post" action="{{ url_for('approve_lot', lid=lot.id) }}"><button type="submit" class="btn-primary btn-sm">Approve</button></form>
+            {% endif %}
+            <form method="post" action="{{ url_for('admin_delete_lot', lid=lot.id) }}" onsubmit="return confirm('Delete lot {{ lot.name }}?')">
+              <button type="submit" class="btn-danger btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Reservations -->
+  <div id="panel-reservations" class="glass-card" style="display:none;overflow:hidden;">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <span class="syne" style="font-weight:600;">Reservations ({{ reservations|length }})</span>
+      <a href="{{ url_for('export_csv', table='reservations') }}" class="btn-secondary btn-sm">⬇️ Export CSV</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Customer</th><th>Lot</th><th>Slot</th><th>Entry</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for r in reservations %}
+        <tr>
+          <td class="mono" style="font-size:11px;color:var(--text-muted);">{{ r.id }}</td>
+          <td style="font-weight:500;font-size:13px;">{{ r.customer.name }}</td>
+          <td style="font-size:12px;color:var(--text-secondary);">{{ r.slot.lot.name }}</td>
+          <td class="mono" style="font-size:12px;">{{ r.slot.label }}</td>
+          <td style="font-size:11px;color:var(--text-muted);">{{ to_ist(r.entry_time).strftime('%d %b, %I:%M%p') }}</td>
+          <td style="font-weight:600;color:#F59E0B;">{% if r.amount_paid %}₹{{ r.amount_paid|int }}{% else %}—{% endif %}</td>
+          <td><span class="badge {% if r.status=='active' %}badge-green{% elif r.status=='completed' %}badge-indigo{% else %}badge-red{% endif %}">{{ r.status }}</span></td>
+          <td>
+            <form method="post" action="{{ url_for('admin_delete_reservation', rid=r.id) }}" onsubmit="return confirm('Delete reservation #{{ r.id }}?')">
+              <button type="submit" class="btn-danger btn-sm">Del</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(name){
+  ['users','vendors','lots','reservations'].forEach(function(t){
+    document.getElementById('panel-'+t).style.display=t===name?'block':'none';
+    var btn=document.getElementById('tab-'+t);
+    if(t===name){btn.style.background='rgba(99,102,241,0.2)';btn.style.color='#818CF8';btn.style.borderColor='rgba(99,102,241,0.4)';}
+    else{btn.style.background='none';btn.style.color='var(--text-secondary)';btn.style.borderColor='var(--border-medium)';}
+  });
+}
+setTimeout(function(){document.querySelectorAll('.anim-item').forEach(function(el){el.classList.add('visible');});},60);
+</script>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Vendor Dashboard — SpotEasy{% endblock %}
+{% block content %}
+{% if not current_user.is_approved %}
+<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+  <span class="pulse-dot pulse-amber"></span>
+  <span style="font-size:13px;color:#F59E0B;font-weight:500;">Your vendor account is <strong>awaiting admin approval</strong>. You can add lots but they won't go live until approved.</span>
+</div>
+{% endif %}
+
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;" class="anim-item visible">
+  <div>
+    <h1 class="syne" style="font-size:26px;font-weight:700;">Vendor Dashboard</h1>
+    <p style="color:var(--text-secondary);font-size:14px;margin-top:4px;">{{ current_user.name }}</p>
+  </div>
+  <a href="{{ url_for('add_lot') }}" class="btn-primary">➕ Add New Lot</a>
+</div>
+
+<!-- Stats -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px;">
+  {% set total_slots = lots|sum(attribute='total_slots') %}
+  {% set occupied = lots|sum(attribute='occupied_count') %}
+  {% set available = lots|sum(attribute='available_count') %}
+  {% set occ_pct = (occupied / total_slots * 100)|round|int if total_slots > 0 else 0 %}
+  <div class="glass-card anim-item" style="padding:20px;text-align:center;">
+    <div class="syne" style="font-size:26px;font-weight:800;color:#818CF8;">{{ lots|length }}</div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Total Lots</div>
+  </div>
+  <div class="glass-card anim-item" style="padding:20px;text-align:center;">
+    <div class="syne" style="font-size:26px;font-weight:800;color:#22D3EE;">{{ total_slots }}</div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Total Slots</div>
+  </div>
+  <div class="glass-card anim-item" style="padding:20px;text-align:center;">
+    <div class="syne" style="font-size:26px;font-weight:800;color:#10B981;">{{ available }}</div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Available</div>
+  </div>
+  <div class="glass-card anim-item" style="padding:20px;text-align:center;">
+    <div class="syne" style="font-size:26px;font-weight:800;color:#F43F5E;">{{ occupied }}</div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Occupied</div>
+  </div>
+</div>
+
+<!-- Lots -->
+<h2 class="syne" style="font-size:18px;font-weight:700;margin-bottom:16px;">My Parking Lots</h2>
+{% if lots %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
+  {% for lot in lots %}
+  {% set lpct = (lot.occupied_count / lot.total_slots * 100)|round|int if lot.total_slots > 0 else 0 %}
+  <div class="glass-card glass-card-hover anim-item" style="padding:20px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:8px;">
+      <div style="min-width:0;">
+        <h3 class="syne" style="font-size:15px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ lot.name }}</h3>
+        <p style="font-size:12px;color:var(--text-secondary);">📍 {{ lot.city }}</p>
+      </div>
+      <span class="badge {% if lot.is_active %}badge-green{% else %}badge-amber{% endif %}">
+        {% if lot.is_active %}Active{% else %}Pending{% endif %}
+      </span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
+      <span>{{ lot.available_count }} free / {{ lot.total_slots }} total</span>
+      <span>{{ lpct }}% occupied</span>
+    </div>
+    <div class="occ-bar" style="margin-bottom:16px;">
+      <div class="occ-fill" style="width:{{ lpct }}%;background:{% if lpct < 60 %}#10B981{% elif lpct < 85 %}#F59E0B{% else %}#F43F5E{% endif %};"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a href="{{ url_for('vendor_lot_grid', lid=lot.id) }}" class="btn-primary btn-sm" style="flex:1;justify-content:center;">Manage Slots</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="glass-card" style="padding:48px;text-align:center;">
+  <div style="font-size:48px;margin-bottom:12px;">🏗️</div>
+  <h3 class="syne" style="font-size:18px;font-weight:600;margin-bottom:8px;">No lots yet</h3>
+  <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;">Add your first parking lot to start accepting bookings.</p>
+  <a href="{{ url_for('add_lot') }}" class="btn-primary">➕ Add Your First Lot</a>
+</div>
+{% endif %}
+<script>setTimeout(function(){document.querySelectorAll('.anim-item').forEach(function(el){el.classList.add('visible');});},60);</script>
+{% endblock %}

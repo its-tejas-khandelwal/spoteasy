@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Register — SpotEasy{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:32px auto;">
+  <div class="glass-card anim-item visible" style="padding:36px;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <h1 class="syne" style="font-size:24px;font-weight:700;margin-bottom:6px;">Create Account</h1>
+      <p style="color:var(--text-secondary);font-size:14px;">Join SpotEasy — Smart Parking India</p>
+    </div>
+
+    <!-- Role toggle -->
+    <div style="display:flex;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;padding:4px;margin-bottom:24px;">
+      <button type="button" id="btnCust" onclick="setRole('customer')" style="flex:1;padding:9px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all 0.2s;background:linear-gradient(135deg,#6366F1,#22D3EE);color:white;">🚗 Customer</button>
+      <button type="button" id="btnVend" onclick="setRole('vendor')" style="flex:1;padding:9px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all 0.2s;background:none;color:var(--text-secondary);">🏢 Parking Owner</button>
+    </div>
+
+    <form method="post">
+      <input type="hidden" name="role" id="roleInput" value="customer"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div style="grid-column:1/-1;">
+          <label class="label-text">Full Name</label>
+          <input type="text" name="name" class="inp" placeholder="Arjun Sharma" required/>
+        </div>
+        <div>
+          <label class="label-text">Email</label>
+          <input type="email" name="email" class="inp" placeholder="you@example.com" required/>
+        </div>
+        <div>
+          <label class="label-text">Phone</label>
+          <input type="tel" name="phone" class="inp" placeholder="+91 98765 43210"/>
+        </div>
+        <div style="position:relative;">
+          <label class="label-text">Password</label>
+          <input type="password" name="password" id="pw" class="inp" placeholder="Min 8 characters" required oninput="checkStrength(this.value)"/>
+          <div id="strengthBar" style="height:3px;border-radius:99px;margin-top:6px;background:rgba(255,255,255,0.06);overflow:hidden;"><div id="strengthFill" style="height:100%;width:0;border-radius:99px;transition:all 0.3s;"></div></div>
+        </div>
+        <div>
+          <label class="label-text">Confirm Password</label>
+          <input type="password" name="confirm_password" class="inp" placeholder="••••••••"/>
+        </div>
+      </div>
+      <div id="vendorFields" style="display:none;">
+        <div style="height:1px;background:var(--border-subtle);margin:4px 0 14px;"></div>
+        <div style="margin-bottom:12px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Business Details</div>
+        <div style="margin-bottom:14px;">
+          <label class="label-text">Business / Lot Name</label>
+          <input type="text" name="business_name" class="inp" placeholder="City Center Parking"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div>
+            <label class="label-text">City</label>
+            <input type="text" name="city" class="inp" placeholder="Lucknow"/>
+          </div>
+          <div>
+            <label class="label-text">State</label>
+            <input type="text" name="state" class="inp" placeholder="Uttar Pradesh"/>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;padding:13px;margin-top:20px;">Create Account</button>
+    </form>
+    <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--text-secondary);">
+      Already have an account? <a href="{{ url_for('login') }}" style="color:#818CF8;text-decoration:none;font-weight:600;">Sign In →</a>
+    </div>
+  </div>
+</div>
+<script>
+function setRole(r){
+  document.getElementById('roleInput').value=r;
+  var isV=r==='vendor';
+  document.getElementById('btnCust').style.background=isV?'none':'linear-gradient(135deg,#6366F1,#22D3EE)';
+  document.getElementById('btnCust').style.color=isV?'var(--text-secondary)':'white';
+  document.getElementById('btnVend').style.background=isV?'linear-gradient(135deg,#6366F1,#22D3EE)':'none';
+  document.getElementById('btnVend').style.color=isV?'white':'var(--text-secondary)';
+  document.getElementById('vendorFields').style.display=isV?'block':'none';
+}
+function checkStrength(v){
+  var s=0;
+  if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
+  var f=document.getElementById('strengthFill');
+  var colors=['#F43F5E','#F59E0B','#F59E0B','#10B981'];
+  f.style.width=(s/4*100)+'%';f.style.background=colors[s-1]||'#F43F5E';
+}
+</script>
+{% endblock %}

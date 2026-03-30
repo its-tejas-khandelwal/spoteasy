@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Terms & Privacy — SpotEasy{% endblock %}
+{% block content %}
+<div style="max-width:700px;margin:0 auto;">
+  <h1 class="syne gradient-text" style="font-size:32px;font-weight:700;margin-bottom:8px;">Terms & Privacy</h1>
+  <p style="color:var(--text-secondary);font-size:14px;margin-bottom:36px;">Last updated: January 2026 · SpotEasy India</p>
+  {% for section, content in [
+    ('Terms of Use', 'SpotEasy is a smart parking platform for Indian cities. By using our service you agree to provide accurate vehicle and contact information, use booked slots only for the duration specified, pay applicable parking charges before exiting, and not misuse or share your digital pass. We reserve the right to suspend accounts that violate these terms.'),
+    ('Privacy Policy', 'We collect your name, email, phone number, and vehicle details to provide parking services. Your location is used only when you search for nearby lots. We do not sell your personal data to third parties. Email notifications are sent for booking confirmations and important updates only. You may request deletion of your account by contacting admin@spoteasy.in.'),
+    ('Refund Policy', 'Bookings are charged based on actual parking duration. The first 15 minutes are always free. If you exit within 15 minutes, no charge applies. Payments made for completed sessions are non-refundable unless there was a technical error on our platform. In case of disputes, contact our support team within 24 hours of the booking.'),
+    ('Contact', 'For support, vendor registration, or any queries: Email: admin@spoteasy.in · Website: www.spoteasy.in · Available Mon–Sat, 9 AM – 6 PM IST'),
+  ] %}
+  <div class="glass-card" style="padding:24px;margin-bottom:16px;">
+    <h2 class="syne" style="font-size:18px;font-weight:700;margin-bottom:12px;color:var(--text-primary);">{{ section }}</h2>
+    <p style="color:var(--text-secondary);font-size:14px;line-height:1.75;">{{ content }}</p>
+  </div>
+  {% endfor %}
+  <div style="text-align:center;margin-top:24px;">
+    <a href="{{ url_for('index') }}" class="btn-secondary">← Back to Home</a>
+  </div>
+</div>
+{% endblock %}

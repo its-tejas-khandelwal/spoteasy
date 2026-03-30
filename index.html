@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}DB View — SpotEasy Admin{% endblock %}
+{% block content %}
+<div style="max-width:800px;margin:0 auto;">
+  <div style="margin-bottom:24px;" class="anim-item visible">
+    <a href="{{ url_for('admin_dashboard') }}" style="color:var(--text-secondary);text-decoration:none;font-size:13px;">← Back to Dashboard</a>
+    <h1 class="syne" style="font-size:24px;font-weight:700;margin-top:10px;">🗄️ Database Diagnostics</h1>
+  </div>
+
+  <!-- Connection status -->
+  <div class="glass-card anim-item visible" style="padding:20px;margin-bottom:20px;border-color:rgba(16,185,129,0.3);font-family:'JetBrains Mono',monospace;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <span class="pulse-dot pulse-green"></span>
+      <span style="font-size:14px;font-weight:500;color:#10B981;">Connected · PostgreSQL</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+      {% for model, count in [
+        ('Users', users|length),
+        ('Lots', lots|length),
+        ('Active Lots', lots|selectattr('is_active','eq',true)|list|length),
+        ('Reservations', reservations|length),
+        ('Active Res.', reservations|selectattr('status','eq','active')|list|length),
+      ] %}
+      <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">{{ model }}</div>
+        <div class="gradient-text syne" style="font-size:22px;font-weight:700;">{{ count }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Users table -->
+  <div class="glass-card anim-item" style="overflow:hidden;margin-bottom:16px;">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
+      <span class="syne" style="font-weight:600;font-family:'JetBrains Mono',monospace;">users ({{ users|length }})</span>
+      <a href="{{ url_for('export_csv', table='users') }}" class="btn-secondary btn-sm">⬇️ CSV</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table" style="font-family:'JetBrains Mono',monospace;font-size:12px;">
+        <thead><tr><th>id</th><th>name</th><th>email</th><th>role</th><th>approved</th><th>created</th></tr></thead>
+        <tbody>
+        {% for u in users %}
+        <tr>
+          <td style="color:var(--text-muted);">{{ u.id }}</td>
+          <td>{{ u.name }}</td>
+          <td style="color:var(--text-secondary);">{{ u.email }}</td>
+          <td><span class="badge {% if u.role=='admin' %}badge-amber{% elif u.role=='vendor' %}badge-indigo{% else %}badge-green{% endif %}" style="font-family:'JetBrains Mono',monospace;">{{ u.role }}</span></td>
+          <td><span style="color:{% if u.is_approved %}#10B981{% else %}#F59E0B{% endif %};">{% if u.is_approved %}true{% else %}false{% endif %}</span></td>
+          <td style="color:var(--text-muted);">{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Lots table -->
+  <div class="glass-card anim-item" style="overflow:hidden;margin-bottom:16px;">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
+      <span class="syne" style="font-weight:600;font-family:'JetBrains Mono',monospace;">parking_lots ({{ lots|length }})</span>
+      <a href="{{ url_for('export_csv', table='lots') }}" class="btn-secondary btn-sm">⬇️ CSV</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table" style="font-family:'JetBrains Mono',monospace;font-size:12px;">
+        <thead><tr><th>id</th><th>name</th><th>city</th><th>slots</th><th>avail</th><th>rate_4w</th><th>active</th></tr></thead>
+        <tbody>
+        {% for l in lots %}
+        <tr>
+          <td style="color:var(--text-muted);">{{ l.id }}</td>
+          <td>{{ l.name }}</td>
+          <td style="color:var(--text-secondary);">{{ l.city }}</td>
+          <td>{{ l.total_slots }}</td>
+          <td style="color:#10B981;">{{ l.available_count }}</td>
+          <td style="color:#F59E0B;">{{ l.rate_4w }}</td>
+          <td><span style="color:{% if l.is_active %}#10B981{% else %}#F59E0B{% endif %};">{% if l.is_active %}true{% else %}false{% endif %}</span></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Reservations table -->
+  <div class="glass-card anim-item" style="overflow:hidden;">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
+      <span class="syne" style="font-weight:600;font-family:'JetBrains Mono',monospace;">reservations ({{ reservations|length }})</span>
+      <a href="{{ url_for('export_csv', table='reservations') }}" class="btn-secondary btn-sm">⬇️ CSV</a>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table" style="font-family:'JetBrains Mono',monospace;font-size:12px;">
+        <thead><tr><th>id</th><th>customer</th><th>lot</th><th>slot</th><th>vehicle</th><th>entry</th><th>amount</th><th>status</th></tr></thead>
+        <tbody>
+        {% for r in reservations[:50] %}
+        <tr>
+          <td style="color:var(--text-muted);">{{ r.id }}</td>
+          <td>{{ r.customer.name }}</td>
+          <td style="color:var(--text-secondary);">{{ r.slot.lot.name }}</td>
+          <td>{{ r.slot.label }}</td>
+          <td>{{ r.vehicle_no }}</td>
+          <td style="color:var(--text-muted);">{{ to_ist(r.entry_time).strftime('%m-%d %H:%M') }}</td>
+          <td style="color:#F59E0B;">{% if r.amount_paid %}₹{{ r.amount_paid|int }}{% else %}—{% endif %}</td>
+          <td><span class="badge {% if r.status=='active' %}badge-green{% elif r.status=='completed' %}badge-indigo{% else %}badge-red{% endif %}">{{ r.status }}</span></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if reservations|length > 50 %}
+    <div style="padding:10px 18px;font-size:12px;color:var(--text-muted);text-align:center;font-family:'JetBrains Mono',monospace;">… showing 50 of {{ reservations|length }} records. Use CSV export for full data.</div>
+    {% endif %}
+  </div>
+</div>
+<script>setTimeout(function(){document.querySelectorAll('.anim-item').forEach(function(el){el.classList.add('visible');});},60);</script>
+{% endblock %}
